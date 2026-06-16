@@ -1,5 +1,5 @@
 ---
-name: signal-store-developer
+name: ngrx-signal-store-developer
 description: Generates and refactors `@ngrx/signals` SignalStore code and provides architectural guidance. Trigger when creating or migrating Angular stores; when working with `signalStore`, `withState`, `withComputed`, `withMethods`, `withProps`, `withHooks`, `withLinkedState`, `withEntities`, `withReducer`, or `withEventHandlers`; when handling async side effects with `rxMethod` / `signalMethod`; when defining reusable `signalStoreFeature`s; when wiring `Events` / `Dispatcher` / `injectDispatch`; or when testing stores with `TestBed`, `unprotected`, and `patchState`.
 license: MIT
 metadata:
