@@ -1,0 +1,18 @@
+{
+  "name": "avinay-skills",
+  "owner": {
+    "name": "Avinay Basnet"
+  },
+  "description": "Agent skills for NgRx SignalStore (@ngrx/signals) development.",
+  "plugins": [
+    {
+      "name": "signal-store-developer",
+      "description": "Generate and refactor @ngrx/signals SignalStore code with architectural guidance.",
+      "source": "./signal-store-developer",
+      "author": {
+        "name": "Avinay Basnet"
+      },
+      "category": "development"
+    }
+  ]
+}
