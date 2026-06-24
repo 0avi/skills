@@ -1,0 +1,45 @@
+{
+  "skill_name": "angular-esbuild-migration",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "Migrate this Angular 19 application from its webpack-based builder (@angular-builders/custom-webpack) to Angular's native esbuild application builder (@angular-devkit/build-angular:application). Update angular.json, package.json, the tsconfig files, polyfills, the test setup, SCSS, and any TypeScript source the stricter compiler rejects. The environment is offline (no npm install / ng build). Do not suppress compiler errors. Produce a short report of every file changed, created, or deleted.",
+      "expected_output": "A fully migrated project: application/dev-server/jest builders, object-form outputPath, array polyfills, bundler moduleResolution, es2022 targets, webpack/karma/babel/IE-polyfill packages and configs removed, zone.js/testing only in test-setup, internal imports and TS2612/TS2729/SCSS-tilde/async-spec issues fixed.",
+      "files": [],
+      "expectations": [
+        "Build builder is @angular-devkit/build-angular:application",
+        "customWebpackConfig block removed",
+        "Entry point renamed to \"browser\"; \"main\" removed",
+        "polyfills is an array",
+        "outputPath uses object form with browser:\"\"",
+        "namedChunks/vendorChunk/buildOptimizer/es5 options removed",
+        "Serve builder is dev-server; test builder is jest",
+        "webpack.config.js, karma.conf.js, tsconfig-es5.app.json deleted",
+        "src/test-setup.ts created with zone.js/testing; old test.ts removed",
+        "Legacy polyfills (core-js/formdata-polyfill/regenerator-runtime/process) removed; zone.js/testing NOT in polyfills.ts",
+        "tsconfig moduleResolution bundler, target es2020+",
+        "spec tsconfig target not es5, types include jest",
+        "SCSS '~' paths removed",
+        "Internal @ngrx/store/src import replaced with package root (T2)",
+        "TS2729 data$ field initializer moved off the declaration (T4)",
+        "TS2612 subclass @Input marked declare (T3)",
+        "Duplicate spec filename removed or excluded (T12)",
+        "async() renamed to waitForAsync in specs (T11)",
+        "webpack/babel/karma packages removed; jest added; dead npm-script flags removed"
+      ]
+    },
+    {
+      "id": 1,
+      "prompt": "An Angular 19 app was just switched to the esbuild application builder (moduleResolution: bundler, target es2022). The build now fails with TS2307 on an '@ngrx/store/src/...' import, TS2729 'data$ used before initialization', and TS2612 'visible will overwrite the base property'. Given the three source files, fix the source so it compiles, without suppressing errors. Write the corrected files out.",
+      "expected_output": "Corrected source files: @ngrx import uses the package root, data$ initializer moved into the constructor (or definite assignment), subclass @Input visible marked declare, and no @ts-ignore/@ts-nocheck/skipLibCheck suppression.",
+      "files": [],
+      "expectations": [
+        "Internal @ngrx/store/src import replaced with package root (T2)",
+        "data$ no longer initialized at field declaration (T4)",
+        "data$ assigned in constructor or uses definite assignment (T4)",
+        "subclass visible @Input marked declare (T3)",
+        "No @ts-ignore/@ts-nocheck/skipLibCheck suppression"
+      ]
+    }
+  ]
+}

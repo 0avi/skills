@@ -3,6 +3,7 @@
 | Skill | What it does |
 | ----- | ------------ |
 | [`ngrx-signal-store-developer`](ngrx-signal-store-developer/SKILL.md) | Generates and refactors NgRx `@ngrx/signals` **SignalStore** code and provides architectural guidance for `signalStore`, `withState` / `withComputed` / `withMethods` / `withProps` / `withHooks`, `rxMethod` / `signalMethod`, `withEntities`, the events plugin, reusable `signalStoreFeature`, and `TestBed` testing. |
+| [`angular-webpack-esbuild-migration`](angular-webpack-esbuild-migrationr/SKILL.md) | Migrates Angular project off a webpack-based builder (`@angular-builders/custom-webpack`, or `@angular-devkit/build-angular:browser`) to Angular's native esbuild builder(`@angular-devkit/build-angular:application`) |
 
 ## Using these skills
 
