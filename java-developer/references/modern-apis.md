@@ -3,7 +3,7 @@
 | API | Version | When to use it |
 | --- | ------- | -------------- |
 | Stream gatherers | 24 | When a stream needs an intermediate operation the JDK does not have |
-| Virtual threads | 21 | I/O-bound concurrency — usually a framework config change, not new code |
+| Virtual threads | 21 | I/O-bound concurrency - usually a framework config change, not new code |
 | Foreign Function & Memory | 22 | Replacing existing JNI or `sun.misc.Unsafe` code |
 
 ---
@@ -39,7 +39,7 @@ transactions.stream()
 
 ## Virtual Threads
 
-Lightweight threads managed by the JVM. Blocking parks a continuation rather than pinning an OS thread, so thread-per-request scales to hundreds of thousands of tasks — **blocking, sequential, debuggable code scales the way reactive code did, without the reactive model.**
+Lightweight threads managed by the JVM. Blocking parks a continuation rather than pinning an OS thread, so thread-per-request scales to hundreds of thousands of tasks - **blocking, sequential, debuggable code scales the way reactive code did, without the reactive model.**
 
 ```java
 try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
@@ -51,11 +51,11 @@ try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
 
 Rules:
 
-- **I/O-bound work only.** They give nothing to CPU-bound work — use the common `ForkJoinPool` for that.
+- **I/O-bound work only.** They give nothing to CPU-bound work - use the common `ForkJoinPool` for that.
 - **Never pool them.** One per task, then let it die. Pooling defeats the design.
 - Prefer `ReentrantLock` over `synchronized` around blocking calls in hot paths (historically this pinned the carrier thread; largely addressed in Java 24, but the guidance still holds).
 - Prefer `ScopedValue` over `ThreadLocal`, which is expensive at this scale.
-- **Prefer the framework switch.** Most application servers and HTTP clients enable virtual threads with one setting — take that rather than hand-rolling executors. Use explicit executors when fanning out I/O yourself.
+- **Prefer the framework switch.** Most application servers and HTTP clients enable virtual threads with one setting - take that rather than hand-rolling executors. Use explicit executors when fanning out I/O yourself.
 
 ---
 
@@ -75,7 +75,7 @@ try (var arena = Arena.ofConfined()) {          // always scope allocations in t
 }
 ```
 
-- Most applications will never need this — that is fine.
+- Most applications will never need this - that is fine.
 - **Migrate existing JNI or `Unsafe` memory-access code.** `Unsafe`'s memory methods are being removed.
 - Use `jextract` to generate bindings from a C header rather than writing them by hand.
 

@@ -1,6 +1,6 @@
 # var
 
-**Use `var` for local variables — go all in, consistently rather than sparingly.** A codebase that uses it only for "obvious" cases draws an arbitrary line nobody agrees on; consistency is what makes it readable.
+**Use `var` for local variables - go all in, consistently rather than sparingly.** A codebase that uses it only for "obvious" cases draws an arbitrary line nobody agrees on; consistency is what makes it readable.
 
 `var` is not dynamic typing. The type is fixed at compile time and unchanged in the bytecode.
 
@@ -30,7 +30,7 @@ var balanceByAccount = new HashMap<String, BigDecimal>();
 var customerName = record.getName();
 ```
 
-A `List<Customer>` is rarely "a list of customers" — it is `activeCustomers`, `customersAwaitingReview`, `customersToNotify`.
+A `List<Customer>` is rarely "a list of customers" - it is `activeCustomers`, `customersAwaitingReview`, `customersToNotify`.
 
 ## Suffix `Optional` locals with `Opt`
 
@@ -45,13 +45,13 @@ Without the suffix, `person.map(...)` reads as though `Person` has a `map` metho
 
 | Case | Why |
 | ---- | --- |
-| Fields, parameters, return types | `var` is illegal — and public signatures should always state their types |
-| You want the interface, not the implementation | `List<String> names = new ArrayList<>();` — `var` infers `ArrayList` |
-| A numeric literal whose width matters | `long timeoutMillis = 30_000;` — `var` infers `int` |
+| Fields, parameters, return types | `var` is illegal - and public signatures should always state their types |
+| You want the interface, not the implementation | `List<String> names = new ArrayList<>();` - `var` infers `ArrayList` |
+| A numeric literal whose width matters | `long timeoutMillis = 30_000;` - `var` infers `int` |
 
 `var` also cannot be declared without an initialiser or initialised to `null`; the compiler rejects both.
 
 ## Related
 
-- [record-patterns.md](record-patterns.md) — `var` inside record patterns, where it changes meaning, not just verbosity
+- [record-patterns.md](record-patterns.md) - `var` inside record patterns, where it changes meaning, not just verbosity
 - [optional-and-null.md](optional-and-null.md)

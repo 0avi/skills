@@ -4,7 +4,7 @@
 
 - Make classes `final` unless explicitly designed for extension.
 - Make fields `final`.
-- Confine any genuine mutability to a **single source file** — never let a mutable object escape the file that owns it.
+- Confine any genuine mutability to a **single source file** - never let a mutable object escape the file that owns it.
 - Name mutable locals, parameters and fields `mutableXxx`, so mutability looks unusual in review.
 
 ```java
@@ -32,7 +32,7 @@ An immutable object holding a mutable thing is **not** immutable, and is worse t
 | Backdoor | Fix |
 | -------- | --- |
 | Mutable collection field | `List.copyOf` / `Set.copyOf` / `Map.copyOf` in the constructor |
-| **Array field** | Arrays cannot be made immutable — use an immutable `List` or a purpose-built type |
+| **Array field** | Arrays cannot be made immutable - use an immutable `List` or a purpose-built type |
 | Mutable bean field | Store a record or an immutable value instead |
 | `Date`, `Calendar`, `StringBuilder` | `java.time`, `String` |
 
@@ -46,11 +46,11 @@ this.holdings = List.copyOf(holdings);
 public List<String> holdings() { return holdings; }
 ```
 
-Use `copyOf`, not `Collections.unmodifiableList` — the latter wraps a live collection rather than copying it. See [immutable-collections.md](immutable-collections.md).
+Use `copyOf`, not `Collections.unmodifiableList` - the latter wraps a live collection rather than copying it. See [immutable-collections.md](immutable-collections.md).
 
 ## Prefer composition over inheritance
 
-Immutable classes must not form inheritance hierarchies — a subclass can add mutable state, and `equals` becomes unfixable.
+Immutable classes must not form inheritance hierarchies - a subclass can add mutable state, and `equals` becomes unfixable.
 
 - Model "has a" with a field.
 - Model a constrained set of alternatives with a **sealed interface**, not an open superclass. See [sealed-types.md](sealed-types.md).
@@ -68,10 +68,10 @@ public sealed interface Payment permits CardPayment, BankTransfer {}
 
 | Kind of type | Rule |
 | ------------ | ---- |
-| Domain values — money, dates, identifiers, addresses | Always immutable |
-| Data crossing a boundary — payloads, messages, rows | Always immutable; model as records |
+| Domain values - money, dates, identifiers, addresses | Always immutable |
+| Data crossing a boundary - payloads, messages, rows | Always immutable; model as records |
 | Configuration | Immutable; read once at startup |
-| Long-lived accumulators and coordinators | Mutability acceptable — keep few, keep small, keep private |
+| Long-lived accumulators and coordinators | Mutability acceptable - keep few, keep small, keep private |
 
 ## Related
 

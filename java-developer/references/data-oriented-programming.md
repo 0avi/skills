@@ -4,10 +4,10 @@ Records, sealed types, patterns and enums are pieces of **one** design style, no
 
 | Feature | Role | Expresses |
 | ------- | ---- | --------- |
-| **Records** | Compose data | **AND** — a `Person` is a name *and* an age *and* an address |
-| **Sealed types** | Constrain data | **OR** — an `Address` is a street address *or* a military address |
+| **Records** | Compose data | **AND** - a `Person` is a name *and* an age *and* an address |
+| **Sealed types** | Constrain data | **OR** - an `Address` is a street address *or* a military address |
 | **Patterns** | Operate on data | Test, extract and bind, over nested structures |
-| **Enums** | Validate data | **ONE OF** — a closed set, checked at compile time |
+| **Enums** | Validate data | **ONE OF** - a closed set, checked at compile time |
 
 State the shape of the domain, then let the compiler check the code handles all of it:
 
@@ -39,7 +39,7 @@ static String postalLabel(Client client) {
 
 (The `_` for the unused `status` component requires **Java 22**; on 21 write `var ignoredStatus`.)
 
-No `default`, no `instanceof` chain, no `getClass()` comparison — and adding a third `Address` alternative breaks the build until handled.
+No `default`, no `instanceof` chain, no `getClass()` comparison - and adding a third `Address` alternative breaks the build until handled.
 
 ## Move away from the middle ground
 
@@ -52,7 +52,7 @@ No `default`, no `instanceof` chain, no `getClass()` comparison — and adding a
 | Polymorphic dispatch | Ad hoc | Pattern matching |
 | Open extension | Open extension | Closed, enumerable alternatives |
 
-Most Java sits in the middle column — half-mutable, types that are partly data and partly behaviour. **Push towards the right-hand column, and above all towards immutability.**
+Most Java sits in the middle column - half-mutable, types that are partly data and partly behaviour. **Push towards the right-hand column, and above all towards immutability.**
 
 ## Where records belong
 
@@ -73,11 +73,11 @@ Most Java sits in the middle column — half-mutable, types that are partly data
 
 ## Keep component types simple
 
-`String`, `int`, `long`, `BigDecimal`, `LocalDate`, `UUID`, enums, other records. Never a service, connection, lambda, `Clock` or builder — a type holding collaborators is behaviour, keep it in a class.
+`String`, `int`, `long`, `BigDecimal`, `LocalDate`, `UUID`, enums, other records. Never a service, connection, lambda, `Clock` or builder - a type holding collaborators is behaviour, keep it in a class.
 
 ## It is a whole-system commitment
 
-**Half-adopting this is worse than not adopting it.** A codebase where some payloads are records and some are mutable beans, some hierarchies sealed and some open, some types validating on construction and some in a service, gets the costs of both styles and the benefits of neither — and because frameworks take different code paths for records and beans, the inconsistency shows up as behavioural surprises rather than untidiness.
+**Half-adopting this is worse than not adopting it.** A codebase where some payloads are records and some are mutable beans, some hierarchies sealed and some open, some types validating on construction and some in a service, gets the costs of both styles and the benefits of neither - and because frameworks take different code paths for records and beans, the inconsistency shows up as behavioural surprises rather than untidiness.
 
 Decide at system level, record the decision, apply it consistently:
 

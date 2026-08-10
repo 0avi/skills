@@ -1,6 +1,6 @@
 # Optional and Null
 
-**Use `Optional` instead of `null` on public return types.** `null` requires discipline the compiler cannot help with — nothing in a signature warns that a value may be absent. `Optional` moves the obligation into the type system, which is the entire benefit.
+**Use `Optional` instead of `null` on public return types.** `null` requires discipline the compiler cannot help with - nothing in a signature warns that a value may be absent. `Optional` moves the obligation into the type system, which is the entire benefit.
 
 ```java
 // ❌ nothing states the person might not exist
@@ -14,10 +14,10 @@ public Optional<Person> findPerson(String id) { ... }
 
 | Position | Use `Optional`? | Instead |
 | -------- | --------------- | ------- |
-| Public return type | **Yes** | — |
-| Parameter type | **No** — forces every caller to wrap, and adds a `null`-Optional third state | Overloads |
-| Field type | **No** — not `Serializable`, allocates per instance | Nullable private field + `Optional`-returning accessor |
-| Framework-reflected getter | **No** — frameworks expect a plain value or `null` | Plain getter; use `Optional` on service/repository methods instead |
+| Public return type | **Yes** | - |
+| Parameter type | **No** - forces every caller to wrap, and adds a `null`-Optional third state | Overloads |
+| Field type | **No** - not `Serializable`, allocates per instance | Nullable private field + `Optional`-returning accessor |
+| Framework-reflected getter | **No** - frameworks expect a plain value or `null` | Plain getter; use `Optional` on service/repository methods instead |
 
 ```java
 // ❌ Optional parameter
@@ -54,7 +54,7 @@ return findPerson(id).map(Person::name).orElse("Unknown");
 | `filter` | Discard on a failed predicate |
 | `or(Supplier<Optional<T>>)` | Fall back to another source |
 | `orElse` / `orElseGet` | Supply a default |
-| `orElseThrow()` | Fail loudly when absence is a bug — prefer over `get()` |
+| `orElseThrow()` | Fail loudly when absence is a bug - prefer over `get()` |
 | `ifPresent` / `ifPresentOrElse` | Perform an action |
 | `stream()` | Bridge into a `Stream` pipeline |
 
@@ -68,7 +68,7 @@ return findInNewDatabase(id)
 ```
 
 ```java
-// ✅ Optional.stream() composes with collections — absent values drop out
+// ✅ Optional.stream() composes with collections - absent values drop out
 List<Person> found = ids.stream()
     .map(this::findPerson)
     .flatMap(Optional::stream)
@@ -77,7 +77,7 @@ List<Person> found = ids.stream()
 
 ## The `return`-inside-a-block idiom
 
-A lambda cannot `return` from the enclosing method. Loop over the `Optional` instead — it is a collection of zero or one things:
+A lambda cannot `return` from the enclosing method. Loop over the `Optional` instead - it is a collection of zero or one things:
 
 ```java
 public static <T> Iterable<T> in(Optional<T> optional) {
@@ -97,14 +97,14 @@ throw new NoSuchElementException("No person for " + id);
 Java may gain `String?` / `String!`. **Do not treat them as a replacement for `Optional` on return types.** They give the compiler information; they do not give you something chainable.
 
 ```java
-// ✅ Optional — composes
+// ✅ Optional - composes
 return findInNewDatabase(id)
     .or(() -> findInOldDatabase(id))
     .map(Person::name)
     .filter(name -> !name.isBlank())
     .orElse("Unknown");
 
-// ❌ same logic with a nullable return type — composition gone
+// ❌ same logic with a nullable return type - composition gone
 Person? person = findInNewDatabase(id);
 if (person == null) person = findInOldDatabase(id);
 if (person == null) return "Unknown";
@@ -117,6 +117,6 @@ The two features are complementary: null markers belong on **parameters and fiel
 
 ## Related
 
-- [var.md](var.md) — the `Opt` suffix for `Optional` locals
-- [record-patterns.md](record-patterns.md) — where `null` re-enters via pattern matching
-- [switch.md](switch.md) — `case null`
+- [var.md](var.md) - the `Opt` suffix for `Optional` locals
+- [record-patterns.md](record-patterns.md) - where `null` re-enters via pattern matching
+- [switch.md](switch.md) - `case null`

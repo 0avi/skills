@@ -11,19 +11,19 @@ metadata:
 
 Covers the language changes from Java 8 to Java 25.
 
-1. **Always determine the project's Java version and build tool before giving guidance.** Available features vary enormously between 8, 11, 17, 21 and 25 — advice that is correct on 25 will not compile on 17.
+1. **Always determine the project's Java version and build tool before giving guidance.** Available features vary enormously between 8, 11, 17, 21 and 25 - advice that is correct on 25 will not compile on 17.
 
-2. **Apply these defaults when generating code:** favour immutability, prefer the arrow expression form of `switch`, use `Optional` on public return types, go all in on `var` for locals. Where the surrounding code conflicts, match the surrounding code and raise the conflict — do not silently mix styles.
+2. **Apply these defaults when generating code:** favour immutability, prefer the arrow expression form of `switch`, use `Optional` on public return types, go all in on `var` for locals. Where the surrounding code conflicts, match the surrounding code and raise the conflict - do not silently mix styles.
 
-3. **A new feature is not automatically a best practice.** Some post-Java-8 features should be avoided in application code — JPMS modules, module import declarations, label-form switches. Each reference states a verdict; follow it rather than hedging.
+3. **A new feature is not automatically a best practice.** Some post-Java-8 features should be avoided in application code - JPMS modules, module import declarations, label-form switches. Each reference states a verdict; follow it rather than hedging.
 
-4. **After generating code, compile it and run the tests** with the project's build tool (`mvn -q verify`, `./gradlew build`). Do not skip this — patterns, sealed exhaustiveness and record component nullability fail at compile time in subtle ways.
+4. **After generating code, compile it and run the tests** with the project's build tool (`mvn -q verify`, `./gradlew build`). Do not skip this - patterns, sealed exhaustiveness and record component nullability fail at compile time in subtle ways.
 
 ## Determining the Java Version
 
-**Step 1.** Read the build config — authoritative, not the installed JDK. Maven: `maven.compiler.release`, or `source`/`target`. Gradle: `java.toolchain.languageVersion`, `sourceCompatibility`, `options.release`. Also `.sdkmanrc`, `.tool-versions`, `.java-version`, CI workflows.
+**Step 1.** Read the build config - authoritative, not the installed JDK. Maven: `maven.compiler.release`, or `source`/`target`. Gradle: `java.toolchain.languageVersion`, `sourceCompatibility`, `options.release`. Also `.sdkmanrc`, `.tool-versions`, `.java-version`, CI workflows.
 
-**Step 2.** Run `java -version`. If the installed JDK is older than the configured release, say so — the code will not compile.
+**Step 2.** Run `java -version`. If the installed JDK is older than the configured release, say so - the code will not compile.
 
 **Step 3.** Only generate features available in that release. If a recommendation needs a newer version, state which and give the version-appropriate alternative. Never silently generate Java 21 code for a Java 17 project.
 
@@ -52,7 +52,7 @@ Use records to express **AND** (a bundle of components) and sealed types to expr
 
 ## Pattern Matching
 
-Read these before working with `instanceof` or a `switch` over types. Treat a pattern as the test/extract/bind construct it is, not as shorter `instanceof` syntax — the nesting rules and the `null` interaction depend on it.
+Read these before working with `instanceof` or a `switch` over types. Treat a pattern as the test/extract/bind construct it is, not as shorter `instanceof` syntax - the nesting rules and the `null` interaction depend on it.
 
 - **Patterns**: The test/extract/bind fusion, type patterns, the modern `equals` idiom, patterns in `switch`, the match-all pattern `_`, and where patterns may appear in future. Read [patterns.md](references/patterns.md)
 - **Record Patterns**: Destructuring records, arbitrary pattern nesting, the subtle rule that decides whether a component pattern can match `null`, and using `var` inside record patterns to make narrowing visible. Read [record-patterns.md](references/record-patterns.md)
@@ -67,7 +67,7 @@ Read these before working with `instanceof` or a `switch` over types. Treat a pa
 
 ## Smaller Language Features
 
-The reference carries a per-feature verdict table — adopt, adopt for scripts only, or avoid. Follow it rather than adopting on novelty.
+The reference carries a per-feature verdict table - adopt, adopt for scripts only, or avoid. Follow it rather than adopting on novelty.
 
 - **Smaller Features**: Text blocks (and the SQL injection trap they invite), unnamed variables `_`, Markdown doc comments, instance `main` methods and compact source files, and module import declarations (avoid). Read [smaller-features.md](references/smaller-features.md)
 
@@ -81,7 +81,7 @@ The reference carries a per-feature verdict table — adopt, adopt for scripts o
 
 ## Beyond the Language
 
-- **Modern APIs**: Stream gatherers, virtual threads, and the Foreign Function & Memory API — when each is genuinely worth reaching for. Read [modern-apis.md](references/modern-apis.md)
+- **Modern APIs**: Stream gatherers, virtual threads, and the Foreign Function & Memory API - when each is genuinely worth reaching for. Read [modern-apis.md](references/modern-apis.md)
 
 ## Checklist
 

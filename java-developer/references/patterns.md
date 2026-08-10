@@ -15,7 +15,7 @@ if (obj instanceof JsonObject json) {
 }
 ```
 
-## What a pattern is — learn this, not just the syntax
+## What a pattern is - learn this, not just the syntax
 
 A pattern **fuses three operations**: test, extract, bind. Every pattern does all three (binding is optional). This matters because it is what lets patterns nest and compose; treating `Person p` as mere shorthand means missing what record patterns are for.
 
@@ -42,7 +42,7 @@ if (value instanceof String str && !str.isBlank()) {
 if (!(value instanceof String str)) {
   return "";
 }
-return str.trim();   // in scope — the early return proved the match
+return str.trim();   // in scope - the early return proved the match
 ```
 
 ## The `equals` idiom
@@ -69,7 +69,7 @@ public boolean equals(Object obj) {
 }
 ```
 
-Better still, don't hand-write `equals` — use a record or generate the bean. See [beans-vs-records.md](beans-vs-records.md).
+Better still, don't hand-write `equals` - use a record or generate the bean. See [beans-vs-records.md](beans-vs-records.md).
 
 ## Prefer a pattern switch over an `instanceof` chain
 
@@ -84,14 +84,14 @@ if (payment instanceof CardPayment) {
 }
 throw new IllegalStateException();
 
-// ✅ with a sealed type, no default and no throw — the compiler proves completeness
+// ✅ with a sealed type, no default and no throw - the compiler proves completeness
 return switch (payment) {
   case CardPayment c  -> c.last4();
   case BankTransfer b -> b.sortCode();
 };
 ```
 
-## Match-all pattern — Java 22+
+## Match-all pattern - Java 22+
 
 Use `_` for anything you do not need, so the compiler enforces that you do not use it.
 
@@ -101,9 +101,9 @@ if (person instanceof Person(_, Address(_, var city))) {
 }
 ```
 
-**Requires Java 22** (preview in 21). On Java 21 write `var ignoredName` instead — a bare `_` is a compile error, and so is omitting the component entirely. Record patterns must name every component.
+**Requires Java 22** (preview in 21). On Java 21 write `var ignoredName` instead - a bare `_` is a compile error, and so is omitting the component entirely. Record patterns must name every component.
 
-`case _ ->` works as a switch catch-all — but over a **sealed type prefer omitting it**, so future alternatives become compile errors rather than being silently swallowed.
+`case _ ->` works as a switch catch-all - but over a **sealed type prefer omitting it**, so future alternatives become compile errors rather than being silently swallowed.
 
 ## Do not write speculative code
 

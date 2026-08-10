@@ -2,7 +2,7 @@
 
 **Where data has a constrained set of alternatives you own, use a sealed hierarchy.** A record expresses **AND**; a sealed type expresses **OR**.
 
-Use the simple shape — **sealed interface at the root, `final` records as the alternatives**:
+Use the simple shape - **sealed interface at the root, `final` records as the alternatives**:
 
 ```java
 public sealed interface Address permits StreetAddress, MilitaryAddress {}
@@ -16,7 +16,7 @@ public record MilitaryAddress(String unit, String bfpo) implements Address {}
 Sealing tells the compiler the subtype list is complete, and the compiler gives that back as exhaustiveness checking.
 
 ```java
-// ✅ no default, no throw — the compiler proves completeness
+// ✅ no default, no throw - the compiler proves completeness
 var formatted = switch (address) {
   case StreetAddress(var line, var city, var postcode) -> line + ", " + city + " " + postcode;
   case MilitaryAddress(var unit, var bfpo)             -> unit + ", BFPO " + bfpo;
@@ -42,9 +42,9 @@ var label = switch (person) {
 
 | Use a sealed hierarchy | Do not |
 | ---------------------- | ------ |
-| Payment method: card, transfer, direct debit | An extension point for third-party implementations — use an ordinary interface |
+| Payment method: card, transfer, direct debit | An extension point for third-party implementations - use an ordinary interface |
 | Result: success or failure | An open-ended set you expect to keep growing from outside |
-| Filing status with per-status data | A plain closed set of constants with no data — use an **enum** |
+| Filing status with per-status data | A plain closed set of constants with no data - use an **enum** |
 | Expression nodes in a parser or rules engine | |
 
 **Strong signal to refactor:** a "type" discriminator field plus a set of nullable fields only meaningful for certain types. That is a sealed hierarchy waiting to be extracted.
@@ -53,14 +53,14 @@ var label = switch (person) {
 
 Avoid until something concretely demands it:
 
-- **`non-sealed`** — re-opens a branch and destroys exhaustiveness for it.
-- **Sealed abstract classes** — drag in inherited state, conflicting with records as alternatives.
-- **Multi-level sealing** — legal, occasionally right, but harder to read. Flatten where you can.
+- **`non-sealed`** - re-opens a branch and destroys exhaustiveness for it.
+- **Sealed abstract classes** - drag in inherited state, conflicting with records as alternatives.
+- **Multi-level sealing** - legal, occasionally right, but harder to read. Flatten where you can.
 
 ## Mechanics
 
 - Permitted subtypes must be in the same **module** (or same **package** in an unnamed module). Sealing does not cross module boundaries.
-- `permits` may be omitted when all subtypes are in the same source file — tidy for small hierarchies:
+- `permits` may be omitted when all subtypes are in the same source file - tidy for small hierarchies:
 
   ```java
   public sealed interface Address {
@@ -69,7 +69,7 @@ Avoid until something concretely demands it:
   }
   ```
 
-- Every permitted subtype must be `final`, `sealed`, or `non-sealed` — the compiler forces the choice.
+- Every permitted subtype must be `final`, `sealed`, or `non-sealed` - the compiler forces the choice.
 - If the hierarchy is recompiled separately and gains a subtype, an old switch throws `MatchException` rather than silently misbehaving.
 
 ## Related

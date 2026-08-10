@@ -12,7 +12,7 @@ Generated: `private final` fields, a canonical constructor, an accessor per comp
 
 ## Always validate in the compact constructor
 
-This is what makes the record trustworthy everywhere downstream — including in record patterns, where an unvalidated `null` component is awkward to handle.
+This is what makes the record trustworthy everywhere downstream - including in record patterns, where an unvalidated `null` component is awkward to handle.
 
 ```java
 public record Person(String name, int age) {
@@ -31,7 +31,7 @@ public record Person(String name, int age) {
 
 ## Never use an array component
 
-Arrays cannot be made immutable, and every generated member is wrong for them: `equals`/`hashCode` use identity, `toString` prints `[B@1b6d3586`. Fixing it means overriding the accessor, `equals`, `hashCode` and `toString` — at which point the record has bought you nothing.
+Arrays cannot be made immutable, and every generated member is wrong for them: `equals`/`hashCode` use identity, `toString` prints `[B@1b6d3586`. Fixing it means overriding the accessor, `equals`, `hashCode` and `toString` - at which point the record has bought you nothing.
 
 ```java
 // ❌
@@ -44,7 +44,7 @@ public record Document(String name, ByteString content) {}   // or a purpose-bui
 
 ## Never use a mutable component
 
-A record is only *shallowly* immutable — `final` stops the reference changing, not the object.
+A record is only *shallowly* immutable - `final` stops the reference changing, not the object.
 
 ```java
 // ❌ caller keeps a live reference and can rewrite the invoice
@@ -62,13 +62,13 @@ Also avoid components typed as a mutable bean, `Date`, `Calendar`, or `StringBui
 
 ## Prefer basic component types
 
-`String`, `int`, `long`, `BigDecimal`, `LocalDate`, `UUID`, enums, and other records. Enums are especially valuable — they constrain the value to a known set **and** validate it at compile time, needing no constructor check.
+`String`, `int`, `long`, `BigDecimal`, `LocalDate`, `UUID`, enums, and other records. Enums are especially valuable - they constrain the value to a known set **and** validate it at compile time, needing no constructor check.
 
 Never put a service, connection, lambda, `Clock` or builder in a record. A type holding collaborators is behaviour, not data.
 
 ## Check what `toString()` exposes
 
-A record's generated `toString()` prints **every component** — records have no encapsulation at all. If a record carries personal data, credentials, tokens, bank details or tax identifiers, they will land in the logs the first time anyone writes `log.info("processing {}", record)`.
+A record's generated `toString()` prints **every component** - records have no encapsulation at all. If a record carries personal data, credentials, tokens, bank details or tax identifiers, they will land in the logs the first time anyone writes `log.info("processing {}", record)`.
 
 ```java
 // ❌ logs the NINO and account number in plain text
@@ -93,7 +93,7 @@ Better: keep sensitive values out of logged records, behind a dedicated type who
 - To extend a base class.
 - Bean-convention accessors for a framework that reflects over `getName()`.
 
-Records are **fully transparent**, irrevocably. That is what makes destructuring, `equals` and serialisation automatic — and why a record is the wrong tool for anything with a hidden invariant or an evolving representation. Read [beans-vs-records.md](beans-vs-records.md) before committing a codebase to records.
+Records are **fully transparent**, irrevocably. That is what makes destructuring, `equals` and serialisation automatic - and why a record is the wrong tool for anything with a hidden invariant or an evolving representation. Read [beans-vs-records.md](beans-vs-records.md) before committing a codebase to records.
 
 ## Rules summary
 
@@ -101,7 +101,7 @@ Records are **fully transparent**, irrevocably. That is what makes destructuring
 - Never an array component; never a mutable component.
 - Prefer basic, immutable component types.
 - Check `toString()` for sensitive data; override to redact.
-- Never add derived state, lazy caching, or overridden accessors — if you want those, generate a bean.
+- Never add derived state, lazy caching, or overridden accessors - if you want those, generate a bean.
 
 ## Related
 
