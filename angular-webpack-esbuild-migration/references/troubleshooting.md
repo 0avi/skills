@@ -1,27 +1,30 @@
-# Troubleshooting (T1–T14)
+# Troubleshooting (T1-T14)
 
 Every entry below was hit on a real production migration. Each is
-symptom → cause → fix. Jump to the one matching your error.
+symptom → cause → fix. **Index by the error you actually have** - do not read
+this file top to bottom, and do not pre-emptively apply fixes for errors that
+have not appeared.
 
-- [T1 — `ERESOLVE` on `npm install`](#t1)
-- [T2 — `TS2307: Cannot find module 'pkg/src/...'`](#t2)
-- [T3 — `TS2612`: will overwrite the base property](#t3)
-- [T4 — `TS2729`: used before its initialization](#t4)
-- [T5 — `Could not resolve "~assets/..."` / wrong relative path](#t5)
-- [T6 — Blank page / 404 after a successful build (`outputPath`)](#t6)
-- [T7 — `TS2307: Cannot find module 'zone.js/dist/...'`](#t7)
-- [T8 — CRLF/LF explosion on Windows](#t8)
-- [T9 — Non-ESM / CommonJS warnings](#t9)
-- [T10 — Bundle grows: webpack plugin has no esbuild equivalent](#t10)
-- [T11 — `async` not exported from `@angular/core/testing`](#t11)
-- [T12 — Jest builder: duplicate spec filenames collide](#t12)
-- [T13 — Jest builder: Windows path-quoting bug](#t13)
-- [T14 — "Your test suite must contain at least one test"](#t14)
+- [T1 - `ERESOLVE` on `npm install`](#t1)
+- [T2 - `TS2307: Cannot find module 'pkg/src/...'`](#t2)
+- [T3 - `TS2612`: will overwrite the base property](#t3)
+- [T4 - `TS2729`: used before its initialization](#t4)
+- [T5 - `Could not resolve "~assets/..."` / wrong relative path](#t5)
+- [T6 - Blank page / 404 after a successful build (`outputPath`)](#t6)
+- [T7 - `TS2307: Cannot find module 'zone.js/dist/...'`](#t7)
+- [T8 - CRLF/LF explosion on Windows](#t8)
+- [T9 - Non-ESM / CommonJS warnings](#t9)
+- [T10 - Bundle grows: webpack plugin has no esbuild equivalent](#t10)
+- [T11 - `async` not exported from `@angular/core/testing`](#t11)
+- [T12 - Jest builder: duplicate spec filenames collide](#t12)
+- [T13 - Jest builder: Windows path-quoting bug](#t13)
+- [T14 - "Your test suite must contain at least one test"](#t14)
 
 > **Windows mass-edits:** several fixes below need a project-wide string
-> replacement. Use the bundled `scripts/codemod.mjs` (line-ending-safe) rather
-> than `sed -i`, which corrupts line endings on Windows (see T8). PowerShell and
-> `sed` equivalents are shown for reference.
+> replacement. On Windows use the PowerShell form
+> (`[System.IO.File]::ReadAllText`/`WriteAllText`), which preserves each file's
+> original line endings. Never `sed -i` - it corrupts line endings across the
+> whole tree on Windows (see T8). The `sed` forms shown are Linux/macOS only.
 
 ---
 
@@ -35,7 +38,9 @@ symptom → cause → fix. Jump to the one matching your error.
 
 **Fix:** Correct the version in `package.json` if you control it. For conflicts
 involving packages you cannot change, add `legacy-peer-deps=true` to `.npmrc`
-and document why — it silences a real version conflict for all installs.
+and document why - it silences a real version conflict for all installs.
+
+Full treatment in [packages.md](packages.md).
 
 ---
 
@@ -57,14 +62,7 @@ re-exported at the package root:
 grep -r "export.*YourType" node_modules/some-package/src/index.d.ts
 ```
 
-Then codemod every file (line-ending-safe, cross-platform):
-
-```bash
-node path/to/codemod.mjs --dir src --ext .ts \
-  --from "from 'some-package/src/models'" --to "from 'some-package'"
-```
-
-PowerShell equivalent (if you prefer not to use the bundled script):
+Then rewrite every file. PowerShell (line-ending-safe - use this on Windows):
 
 ```powershell
 Get-ChildItem -Path src -Filter "*.ts" -Recurse | ForEach-Object {
@@ -74,11 +72,15 @@ Get-ChildItem -Path src -Filter "*.ts" -Recurse | ForEach-Object {
 }
 ```
 
-`sed` (Linux/Mac only — never on Windows, see T8):
+`sed` (Linux/Mac only - never on Windows, see T8):
 
 ```bash
 find src -name "*.ts" -exec sed -i "s|from 'some-package/src/models'|from 'some-package'|g" {} +
 ```
+
+If the type genuinely is not re-exported at the package root, that is an upstream
+packaging gap. Raise it - do not add a `paths` mapping that reintroduces the deep
+import under another name. See [typescript-config.md](typescript-config.md).
 
 ---
 
@@ -142,9 +144,9 @@ TS may resolve the wrong overload (e.g. `.value` becomes `unknown`). Replace wit
 an explicit concrete type:
 
 ```typescript
-// Before — ambiguous overload resolution
+// Before - ambiguous overload resolution
 private ctrl!: ReturnType<FormBuilder['control']>;
-// After — explicit
+// After - explicit
 private ctrl!: FormControl<string | null>;
 ```
 
@@ -161,7 +163,7 @@ or, after removing `~`, a file-not-found at runtime.
 
 **Cause (two parts):** (1) the `~` prefix was a webpack CSS-loader convention
 esbuild doesn't understand; (2) after removing it, esbuild resolves `url()`
-relative to the **SCSS file's location on disk**, not the project root — so a
+relative to the **SCSS file's location on disk**, not the project root - so a
 file at `src/scss/` referencing `url('assets/fonts/foo.woff2')` looks for
 `src/scss/assets/fonts/foo.woff2`.
 
@@ -176,6 +178,10 @@ $font-path: '../assets/fonts'; // correct: one level up from src/scss/
 
 Fixing a path-building SCSS *variable* propagates through interpolation without
 touching every `url()` call.
+
+Note the middle case: it produces **no build error**, only a 404 at runtime. A
+green build does not clear this entry. Full treatment in
+[styles-and-assets.md](styles-and-assets.md).
 
 ---
 
@@ -200,8 +206,11 @@ dist/my-app/
 "outputPath": { "base": "dist/my-app", "browser": "" }
 ```
 
-**Verify immediately** after the first successful build — `ls <outputPath>/` and
-confirm `index.html` is where the server expects it.
+**Verify immediately** after the first successful build - `ls <outputPath>/` and
+confirm `index.html` is where the server expects it. Verifying the config
+instead of the output is how this reaches production.
+
+Full treatment in [angular-json.md](angular-json.md).
 
 ---
 
@@ -213,19 +222,23 @@ confirm `index.html` is where the server expects it.
 **Cause:** zone.js ≥ 0.11 removed the `dist/` directory; many projects still have
 the pre-0.11 pattern (`import 'zone.js/dist/long-stack-trace-zone';` etc.).
 
-**Fix:** Replace the whole block with a single `import 'zone.js/testing';`.
-Confirm with `ls node_modules/zone.js/` — there should be `fesm2015/` and
-`bundles/` but no `dist/`.
+**Fix:** Replace the whole block with `import 'zone.js';` plus
+`import 'zone.js/testing';`. Confirm with `ls node_modules/zone.js/` - there
+should be `fesm2015/` and `bundles/` but no `dist/`.
+
+If you are also moving to the Jest builder, `test-setup.ts` replaces `test.ts`
+wholesale - do that instead of fixing this file in place. See
+[polyfills.md](polyfills.md) and [test-runner.md](test-runner.md).
 
 ---
 
 <a id="t8"></a>
 ## T8: CRLF/LF line-ending explosion on Windows
 
-**Symptom:** `git status` shows 2000–5000 modified files; most differ only in
+**Symptom:** `git status` shows 2000-5000 modified files; most differ only in
 line endings (CRLF → LF). `git diff` shows far fewer real changes.
 
-**Cause:** `sed -i` in Git Bash on Windows rewrites every scanned file as LF —
+**Cause:** `sed -i` in Git Bash on Windows rewrites every scanned file as LF -
 even files with no match. With `core.autocrlf=true`, the index stored CRLF, so
 every touched file now looks changed.
 
@@ -251,9 +264,11 @@ git status --short | wc -l   # should match wc -l real_changes.txt
 *.eot binary
 ```
 
-**Rule:** on Windows, use `scripts/codemod.mjs` or PowerShell
-`[System.IO.File]::ReadAllText/WriteAllText` (both preserve each file's original
-line endings) instead of `sed -i` for tree-wide replacements.
+**Rule:** on Windows, use PowerShell
+`[System.IO.File]::ReadAllText`/`WriteAllText` - it reads a file, replaces only
+the matched substrings, and writes it back, so untouched bytes including CRLF
+endings survive and `git status` shows only real changes. Never `sed -i` for
+tree-wide replacements.
 
 ---
 
@@ -266,29 +281,38 @@ line endings) instead of `sed -i` for tree-wide replacements.
 **Cause:** The package ships a CJS/UMD bundle. esbuild wraps it but warns.
 
 **Fix:** Add it to `allowedCommonJsDependencies` in `angular.json`. These are
-warnings, not errors — the build succeeds. The real fix is upstream ESM support
-(see `cjs-modernization.md` for the long-term path).
+warnings, not errors - the build succeeds, and nothing here blocks the
+migration. Add only what actually warns; a speculative entry hides the fact that
+a package has already moved to ESM.
+
+The real fix is upstream ESM support, which is **outside this migration**.
+Replacing a CJS dependency is an API change with its own regression risk and
+would be equally valid on webpack. Leave the entry in the list and treat the
+replacement as separate work.
 
 ---
 
 <a id="t10"></a>
-## T10: Webpack plugin has no esbuild equivalent — bundle grows after migration
+## T10: Webpack plugin has no esbuild equivalent - bundle grows after migration
 
 **Symptom:** Initial bundle size increases noticeably after removing webpack.
 
 **Cause:** Some webpack plugins do build-time tree-shaking/filtering esbuild has
-no equivalent for — e.g. `MomentLocalesPlugin` (strips non-default moment
+no equivalent for - e.g. `MomentLocalesPlugin` (strips non-default moment
 locales, ~750 KB), `ContextReplacementPlugin` for locales, or custom
 `DefinePlugin` dead-code elimination (partially replaceable via the esbuild
 `define` option in `angular.json`).
 
 **Mitigation, in order:** (1) replace the underlying package with an ESM-native,
-tree-shakeable alternative — the correct long-term fix, belongs in Phase 2+;
+tree-shakeable alternative - the correct long-term fix, belongs in Phase 2+;
 (2) write a custom esbuild plugin (complex, non-standard); (3) accept the
 regression temporarily and document it in your metrics.
 
-**Do not** spend Phase 1 replicating webpack plugins. Note the regression and
-move on.
+**Do not** spend the migration replicating webpack plugins, and do not start
+option (1) inside it either - an ESM dependency swap is separate work with its
+own regression risk. Record the regression in your metrics, state it in the
+report, and move on. This is the one migration outcome that legitimately looks
+like a step backwards, and hiding it is worse than carrying it.
 
 ---
 
@@ -301,14 +325,7 @@ move on.
 **Cause:** `async()` was deprecated in Angular 10 and removed in Angular 12;
 auto-generated spec stubs still use it. The replacement is `waitForAsync()`.
 
-**Fix (line-ending-safe, cross-platform):**
-
-```bash
-node path/to/codemod.mjs --dir src --ext .spec.ts --from "{ async," --to "{ waitForAsync,"
-node path/to/codemod.mjs --dir src --ext .spec.ts --regex "\basync\(" --to "waitForAsync("
-```
-
-PowerShell equivalent:
+**Fix** - PowerShell (line-ending-safe; use this on Windows):
 
 ```powershell
 Get-ChildItem -Path 'src' -Recurse -Filter '*.spec.ts' | ForEach-Object {
@@ -323,13 +340,13 @@ Get-ChildItem -Path 'src' -Recurse -Filter '*.spec.ts' | ForEach-Object {
 ---
 
 <a id="t12"></a>
-## T12: Angular Jest builder — duplicate spec filenames collide
+## T12: Angular Jest builder - duplicate spec filenames collide
 
 **Symptom:**
 `Two output files share the same path but have different contents: foo.component.spec.mjs`.
 
-**Cause:** The experimental Angular Jest builder (19.x) uses only the filename —
-not the full path — as the esbuild output name, so two same-named specs in
+**Cause:** The experimental Angular Jest builder (19.x) uses only the filename -
+not the full path - as the esbuild output name, so two same-named specs in
 different directories collide.
 
 **Fix:** Find duplicates and exclude one of each pair:
@@ -350,7 +367,7 @@ find src -name "<duplicate>.spec.ts"                                   # locate 
 }
 ```
 
-(The audit script lists duplicate spec basenames for you.)
+(The inventory sweep in [audit-and-baseline.md](audit-and-baseline.md) lists duplicate spec basenames for you.)
 
 ---
 
@@ -364,9 +381,9 @@ find src -name "<duplicate>.spec.ts"                                   # locate 
 `--rootDir="${testOut}"` (quotes included). `execFile` doesn't go through a
 shell, so Jest receives the literal quotes as part of the path.
 
-**Impact:** Windows local dev only — Linux/Mac/CI is unaffected.
+**Impact:** Windows local dev only - Linux/Mac/CI is unaffected.
 
-**Workaround — run Jest directly after the build step (the UUID changes each
+**Workaround - run Jest directly after the build step (the UUID changes each
 run, so the two steps must be sequential):**
 
 ```bash
@@ -394,13 +411,13 @@ Fix expected in a future `@angular-devkit/build-angular` release.
 ## T14: "Your test suite must contain at least one test" at runtime
 
 **Symptom:** Many spec suites fail with
-`Test suite failed to run — Your test suite must contain at least one test.`
+`Test suite failed to run - Your test suite must contain at least one test.`
 
 **Cause:** CLI-generated stubs use `declarations: [SomeComponent]` in
-`TestBed.configureTestingModule`. In Angular 15+, components are standalone —
+`TestBed.configureTestingModule`. In Angular 15+, components are standalone -
 passing them to `declarations` throws synchronously before any `it()` registers,
-so Jest sees an empty suite. **This is pre-existing, not caused by Karma → Jest**
-— the same stubs failed the same way under Karma.
+so Jest sees an empty suite. **This is pre-existing, not caused by Karma to Jest**:
+the same stubs failed the same way under Karma.
 
 **Long-term fix:** rewrite stubs to use standalone imports:
 
@@ -413,3 +430,39 @@ TestBed.configureTestingModule({
 **Short-term (stub-only projects):** add `// @ts-nocheck` to suppress
 compile-time errors on stubs, accept the runtime failures, and write real tests
 when the components stabilize.
+
+This is the **only** sanctioned suppression in the whole migration, and it is
+narrow: generated stubs that contained no real assertions and were already
+failing. Never apply it to a spec that was passing.
+
+## Version notes
+
+Most entries are version-agnostic, but five are bounded:
+
+| Entry | Bound |
+|---|---|
+| T2, T4 | Arrive with `moduleResolution: "bundler"` and `target: "es2022"` - whichever Angular version you make those changes on |
+| T7 | zone.js ≥ 0.11, which every supported Angular ships |
+| T11 | `async()` removed from `@angular/core/testing` in Angular 12 |
+| T12, T13 | The experimental Jest builder only. Not applicable if you stay on Karma ([test-runner.md](test-runner.md)) |
+| T14 | Angular 15+, where components are standalone by default |
+
+T3, T5, T6 and T9 apply on `browser-esbuild` (Angular 16) exactly as they do on
+the application builder - the strictness comes from esbuild and the Angular
+compiler plugin, not from the builder's option shape.
+
+## Gotchas
+
+- Agent reads this file top to bottom and pre-applies fixes - index by the error actually emitted; several entries will not apply
+- Agent suppresses TS2612 or TS2729 rather than fixing them - both are real defects the webpack build swallowed
+- Agent adds `skipLibCheck` for a TS2307 - it skips `.d.ts` checking and does nothing for module resolution
+- Agent uses `sed -i` for a T2 or T11 mass replacement on Windows - that is T8; use the PowerShell form
+- Agent treats a green build as clearing T5 or T6 - both fail silently after a successful build
+- Agent applies the T14 `@ts-nocheck` to real specs - it is scoped to already-failing generated stubs
+- Agent chases T13 in CI - Windows local dev only
+- Agent tries to replicate a webpack optimisation plugin during Phase 1 (T10) - record the regression and move on
+- Agent reports the migration as done with T5 or T10 outstanding - one is a runtime 404, the other a measured regression; both belong in the report
+
+## Related
+
+- [packages.md](packages.md) · [angular-json.md](angular-json.md) · [typescript-config.md](typescript-config.md) · [polyfills.md](polyfills.md) · [styles-and-assets.md](styles-and-assets.md) · [test-runner.md](test-runner.md) · [checklist.md](checklist.md)
