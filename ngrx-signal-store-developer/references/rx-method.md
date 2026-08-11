@@ -167,3 +167,35 @@ ngOnInit(): void {
 
 When in doubt for async work, use `rxMethod`.
 
+## Version notes
+
+`rxMethod` is in `@ngrx/signals/rxjs-interop` from the earliest published release, 17.2.0, and this page's shapes hold through 21.
+
+| Detail | Floor |
+| ------ | ----- |
+| `rxMethod` itself | 17.2.0 |
+| `signalMethod`, the RxJS-free alternative below | 19.0.0 |
+| `unprotected`, used when testing these methods | 19.1.0 |
+| `TestBed.tick()`, the way to flush these in tests | Angular **20** |
+
+On `@ngrx/signals` 17 and 18 there is no `signalMethod`, so `rxMethod` or a plain `effect` are the only options and the "bundle size friendly alternative" advice does not apply. `tapResponse` and `mapResponse` come from `@ngrx/operators`, which is versioned independently of `@ngrx/signals`.
+
+Calling a reactive method with a signal or observable from outside an injection context, with no `{ injector }`, is deprecated and slated to throw. Pass the injector today rather than relying on the current tolerance.
+
+## Gotchas
+
+- Agent calls `store.loadByQuery(store.query())` - passing the value makes it a one-shot. Pass the signal `store.query` to get re-execution on change
+- Agent puts the HTTP call in `switchMap` without `tapResponse` - one error unsubscribes the source and the method is dead for the rest of the store's life
+- Agent uses `mergeMap` for a search - responses can arrive out of order and a stale result overwrites a newer one
+- Agent uses `switchMap` for a submit button - that cancels the in-flight write. `exhaustMap` is the one that ignores repeat clicks
+- Agent sets `isLoading: true` in `tap` and clears it in `next` - an error then leaves the spinner on forever. Clear it in `finalize`
+- Agent calls the method with a signal from `ngOnInit` without `{ injector }` - deprecated, and the effect's lifetime is then wrong
+- Agent adds `takeUntilDestroyed()` inside the pipe - redundant when created in an injection context, and it can complete the source permanently
+- Agent wraps the `rxMethod` in an arrow inside `withMethods` - that loses the signal and observable overloads, leaving only the plain value call
+- Agent declares `rxMethod` as a field on a class constructed outside an injection context - it runs at field initialisation and needs the context
+- Agent expects `finalize` to fire once per method call under `switchMap` - cancellation makes it fire per inner subscription
+
+## Related
+
+- [signal-method.md](signal-method.md) · [signal-store.md](signal-store.md) · [lifecycle-hooks.md](lifecycle-hooks.md) · [events.md](events.md) · [testing.md](testing.md)
+

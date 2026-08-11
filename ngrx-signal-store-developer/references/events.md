@@ -1,6 +1,6 @@
 # Events Plugin (`@ngrx/signals/events`)
 
-The events plugin layers a Flux/NgRx-style dispatch + reducer + effect pipeline on top of SignalStore. Reach for it when:
+The events plugin layers a Flux-style dispatch + reducer + effect pipeline on top of SignalStore. It is the shape `@ngrx/store` popularised, implemented entirely inside `@ngrx/signals/events`: every symbol on this page comes from that entry point, and nothing here imports `createAction`, `createReducer` or `createEffect`. Reach for it when:
 
 - Two or more stores need to react to the same trigger.
 - You want a clear audit trail of "what happened" decoupled from "how state changed".
@@ -188,4 +188,33 @@ events.on(bookSearchEvents.bookSelected).pipe(
 ## Components stay simple
 
 Reading state doesn't change with the events plugin. Components inject the store and read signals as usual. Only the **write path** moves from "call a method" to "dispatch an event".
+
+## Version notes
+
+The note at the top of this page is right that the page as written needs **v21**, but the plugin is older than that and the v21 requirement comes from three specific symbols. Floors read from the published types:
+
+| Symbol | Floor |
+| ------ | ----- |
+| `event`, `eventGroup`, `withReducer`, `Dispatcher`, `injectDispatch`, `Events`, `ReducerEvents` | 19.2.0 |
+| `withEffects`, the old name for the side-effect feature | 19.2.0, and **removed in 21.0.0** |
+| `withEventHandlers` | 21.0.0 |
+| `provideDispatcher`, `mapToScope`, `toScope` | 21.0.0 |
+
+So on 19.2.0 or 20.x you can define events, reduce over them and dispatch them; you write `withEffects` rather than `withEventHandlers`, and you have no scoped dispatchers, so `provideDispatcher`, `mapToScope` and `toScope` are unavailable and every event is global. The rename is a hard break in both directions: `withEffects` does not exist on 21, and `withEventHandlers` does not exist below it.
+
+## Gotchas
+
+- Agent reaches for the plugin for single-store CRUD - `withMethods` plus `rxMethod` is simpler. The plugin earns its place when two or more stores react to one trigger
+- Agent writes `withEventHandlers` on `@ngrx/signals` 20 or `withEffects` on 21 - each name exists only on one side of the 21 boundary
+- Agent imports `createAction` or `createReducer` because this page mentions reducers and effects - every symbol here comes from `@ngrx/signals/events`. See the disambiguation in [../SKILL.md](../SKILL.md)
+- Agent expects a descendant scope's events to be visible to an ancestor - visibility runs the other way. A scope sees its own events and its ancestors', and must forward explicitly with `toScope` or `mapToScope`
+- Agent injects `Events` when the handler must run before the state transition - that is what `ReducerEvents` is for
+- Agent returns an event from a handler and also dispatches it manually - returning it dispatches it, so the event fires twice
+- Agent uses `mapResponse` without handling the error branch - an unhandled error kills the handler's source stream
+- Agent hand-writes event type strings instead of using `eventGroup` - the `'[Source] name'` formatting then drifts
+- Agent mixes method-based writes and dispatched events for the same slice - pick one write path per slice or the audit trail lies
+
+## Related
+
+- [signal-store.md](signal-store.md) · [rx-method.md](rx-method.md) · [state-tracking.md](state-tracking.md) · [install.md](install.md) · [testing.md](testing.md)
 

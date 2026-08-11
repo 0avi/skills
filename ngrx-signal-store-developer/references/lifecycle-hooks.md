@@ -83,3 +83,25 @@ withHooks({
 
 Hooks contributed by features are flushed in the order the features were composed. Place `withHooks` **after** the `withMethods` (or `rxMethod`) it depends on, otherwise the names will not yet exist on `store`.
 
+## Version notes
+
+`withHooks` is present in the earliest published release, `@ngrx/signals` 17.2.0, and both signatures shown here work unchanged through 21. Nothing on this page is version-gated.
+
+The surrounding APIs are: `takeUntilDestroyed` comes from `@angular/core/rxjs-interop`, and `rxMethod`, the thing most commonly triggered from `onInit`, is in `@ngrx/signals/rxjs-interop` from 17.2.0.
+
+## Gotchas
+
+- Agent composes `withHooks` before the `withMethods` it calls - the method is not on `store` yet, and the error points at the hook rather than the ordering
+- Agent calls an `rxMethod` with a value from `onInit`, as `store.loadByQuery(store.query())` - that is a one-shot. Pass the signal to get re-execution
+- Agent injects a dependency in the object-signature `onDestroy` - `onDestroy` has no injection context. Use the factory signature
+- Agent subscribes in `onInit` without `takeUntilDestroyed()` - the subscription outlives the store
+- Agent uses a manual subscription for data fetching because this page shows one - the `interval` example is the narrow exception. Anything fetching or reacting to a signal belongs in `rxMethod`
+- Agent puts heavy synchronous work in `onInit` - it runs during injection, so it blocks the first render of whatever injected the store
+- Agent assumes a `{ providedIn: 'root' }` store's `onDestroy` runs on navigation - it runs when the root injector is destroyed, which for most apps means never
+- Agent relies on `onInit` for a component-scoped store and then also provides the store in a parent - two instances, two `onInit` runs
+- Agent clears a timer in `onDestroy` but stored its id in a variable declared inside `onInit` in the object signature - use the factory signature so both hooks close over the same state
+
+## Related
+
+- [signal-store.md](signal-store.md) · [rx-method.md](rx-method.md) · [state-tracking.md](state-tracking.md) · [custom-store-features.md](custom-store-features.md)
+

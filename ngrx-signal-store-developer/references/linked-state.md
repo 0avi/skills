@@ -67,3 +67,29 @@ export const OptionsStore = signalStore(
 
 Use `withLinkedState` for things like the currently-selected row in a list, the active tab keyed by route params, or a form field pre-filled from server data.
 
+## Version notes
+
+`withLinkedState` is exported from `@ngrx/signals` from **20.0.0**, read from the published types. It is the newest of the state-contributing features, so this page does not apply to 17, 18 or 19.
+
+| Release | Position |
+| ------- | -------- |
+| 17.2.0 to 19.x | No `withLinkedState`. Hold the slice in `withState` and reset it explicitly from the method that changes the source |
+| 20.0.0 and later | `withLinkedState` as described here |
+
+The explicit form shown above wraps Angular's `linkedSignal`, which is **Angular 19**, so on Angular 18 neither form is available regardless of the `@ngrx/signals` version.
+
+## Gotchas
+
+- Agent generates `withLinkedState` on `@ngrx/signals` 19 - it arrived in 20.0.0
+- Agent uses it where `withComputed` belongs - if nothing ever writes the slice, it is derived state and should be read-only
+- Agent uses it for a value that must survive source changes - the point of the feature is that it *resets* when sources change. Use `withState` if the user's choice should persist
+- Agent expects a manual `patchState` to stick permanently - it wins only until the next source change, which is easy to misread as a lost write
+- Agent reads `previous?.value` without the optional chain - `previous` is undefined on the first computation
+- Agent puts an expensive computation in the implicit form - it re-runs on every source change, so memoise upstream
+- Agent forgets the slice is real state - it appears in `getState`, so anything persisting whole-state snapshots now round-trips a derived value
+- Agent links to a signal that the same store writes in a method, creating a loop between the source and the linked slice
+
+## Related
+
+- [signal-store.md](signal-store.md) · [state-tracking.md](state-tracking.md) · [custom-store-properties.md](custom-store-properties.md)
+

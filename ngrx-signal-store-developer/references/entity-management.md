@@ -155,3 +155,32 @@ export const TodosStore = signalStore(
 
 See [private-store-members.md](private-store-members.md).
 
+## Version notes
+
+`withEntities` and most of the updater family are in the earliest published release, but **four updaters and the config helpers are not**, and the quick-reference table above mixes all of them together. Floors read from the published types:
+
+| Symbol | Floor |
+| ------ | ----- |
+| `withEntities`, `addEntity` / `addEntities`, `setEntity` / `setEntities`, `setAllEntities`, `updateEntity` / `updateEntities` / `updateAllEntities`, `removeEntity` / `removeEntities` / `removeAllEntities` | 17.2.0 |
+| `entityConfig`, `SelectEntityId` | **18.0.0** |
+| `prependEntity`, `prependEntities`, `upsertEntity`, `upsertEntities` | **19.1.0** |
+
+So on 17 there is no `entityConfig` and no exported `SelectEntityId` type, which means the DRY config section and the named private-collection pattern do not apply; pass `{ selectId }` to each updater and type the function inline. On 17 and 18 there is no `upsert*` and no `prepend*`: `setEntity` replaces where `upsertEntity` would merge, and prepending means rebuilding the collection with `setAllEntities`.
+
+## Gotchas
+
+- Agent uses `upsertEntity` or `prependEntity` on `@ngrx/signals` 18 - both arrived in 19.1.0
+- Agent uses `entityConfig` on 17 - it arrived in 18.0.0
+- Agent passes `selectId` to some updaters and not others - a missed one silently keys off `id`, which is `undefined`, and the collection corrupts. Removal updaters are the documented exception and never need it
+- Agent expects `addEntity` to overwrite an existing id - it **skips** silently. `setEntity` replaces, `upsertEntity` merges
+- Agent expects `updateEntity` on a missing id to throw - it is a silent no-op, so a failed update looks like a successful one
+- Agent confuses `setEntity` with `upsertEntity` - set replaces the whole entity, upsert merges the changes into it
+- Agent reads `entities()` expecting insertion order - it is computed in `ids` order, which the updaters control
+- Agent uses a named collection and then forgets `{ collection: 'book' }` on an updater - it writes to the unnamed collection instead, which may not exist
+- Agent puts two unrelated entity types in one store because named collections make it possible - one store per entity type unless they always load together
+- Agent imports `@ngrx/entity` for the adapter - that is the Redux-style store's package. See [install.md](install.md)
+
+## Related
+
+- [signal-store.md](signal-store.md) · [private-store-members.md](private-store-members.md) · [custom-store-features.md](custom-store-features.md) · [install.md](install.md)
+

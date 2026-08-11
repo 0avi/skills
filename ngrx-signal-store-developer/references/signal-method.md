@@ -94,3 +94,29 @@ ngOnInit(): void {
 
 Most data-fetching stores in this project should use **`rxMethod`**. Reserve `signalMethod` for lightweight side effects.
 
+## Version notes
+
+`signalMethod` is exported from `@ngrx/signals` from **19.0.0**, read from the published types. It is one of the newer core symbols, so this whole page is unavailable on 17 and 18.
+
+| Release | Position |
+| ------- | -------- |
+| 17.2.0, 18.x | No `signalMethod`. Use `rxMethod`, or a plain `effect` for the trivial cases |
+| 19.0.0 and later | `signalMethod` as described here, unchanged through 21 |
+
+The API has not changed since 19.0.0. The `{ injector }` option and the cleanup model described above behave the same on 19, 20 and 21.
+
+## Gotchas
+
+- Agent generates `signalMethod` on `@ngrx/signals` 18 - it does not exist before 19.0.0
+- Agent calls a root-provided `signalMethod` with a signal from a component's `ngOnInit` and omits `{ injector }` - the effect then outlives the component, which is a leak. Static-value calls are exempt
+- Agent expects operators - there are none. If you want `debounceTime`, `switchMap`, retry or polling, that is `rxMethod`
+- Agent uses it for an HTTP call - no cancellation semantics, so two overlapping calls race and the loser can win
+- Agent assumes signals inside the processor body are tracked - only the declared input is. That is the advantage over `effect`, and it surprises people
+- Agent expects every intermediate value of a rapidly changing signal - signals coalesce, so intermediate values are dropped. `rxMethod` with an observable input keeps them
+- Agent creates one `signalMethod` per call site - it is reusable across many inputs, which is the point
+- Agent asserts synchronously after calling with a signal in a test - flush with `TestBed.tick()` first. See [testing.md](testing.md)
+
+## Related
+
+- [rx-method.md](rx-method.md) · [signal-store.md](signal-store.md) · [state-tracking.md](state-tracking.md) · [testing.md](testing.md)
+

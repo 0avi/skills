@@ -168,3 +168,34 @@ signalStore(withEntities<Book>(), withRequestStatus(), withLogger('books'));
 - Export updater functions alongside the feature for tree-shaking and composition.
 - Test custom features by wrapping them in a minimal `signalStore(...)` and asserting on that store (see [testing.md](testing.md)).
 
+## Version notes
+
+`signalStoreFeature` and the `type<...>()` helper are in the earliest published release, 17.2.0. `withFeature` is newer: the published types put it in `@ngrx/signals` 19.1.0.
+
+| Symbol | Floor, read from the published types |
+| ------ | ------------------------------------ |
+| `signalStoreFeature`, `type` | 17.2.0 |
+| `withFeature` | **19.1.0** |
+| `withProps`, if the feature contributes props | 19.0.0 |
+| `withLinkedState`, if the feature contributes linked state | 20.0.0 |
+
+On 17 and 18 there is no `withFeature`, so a feature needing a value from the host store has to take it as a plain function argument and be composed by hand, as `withBooksFilter(entities)` would be if you already had the signal.
+
+The empty-generic workaround described above is a TypeScript inference limitation rather than a library version issue, and it still applies on 21.
+
+## Gotchas
+
+- Agent declares an input contract with `type<...>()` when the feature needs no input - contracts couple the feature to the host's shape. Prefer loosely coupled features
+- Agent writes two input-taking features with no generic parameter and composes them - inference collapses. Add the unused generic, as `withZ<_>()`
+- Agent uses `withFeature` when a structural contract would do - `withFeature` is for when the feature needs an actual value at compose time, not a shape
+- Agent puts methods on the feature where standalone updater functions would tree-shake and compose inside one `patchState`
+- Agent composes a feature before the state it reads - features merge in order
+- Agent has a feature reference a host member prefixed with `_` - private members cannot appear in an input contract. See [private-store-members.md](private-store-members.md)
+- Agent duplicates a `requestStatus` slice in two features that are then composed into one store - the second `withState` overwrites the first for any shared key
+- Agent tests a feature by inspecting the returned object rather than composing it into a store
+- Agent generates `withFeature` on `@ngrx/signals` 18 - it arrived in 19.1.0
+
+## Related
+
+- [signal-store.md](signal-store.md) · [entity-management.md](entity-management.md) · [custom-store-properties.md](custom-store-properties.md) · [state-tracking.md](state-tracking.md) · [testing.md](testing.md)
+

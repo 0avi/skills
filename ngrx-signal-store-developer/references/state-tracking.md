@@ -105,3 +105,31 @@ When the state is available synchronously at construction, a `withState(() => in
 
 See [custom-store-features.md](custom-store-features.md). `getState` + `effect` inside a `signalStoreFeature` is the canonical pattern.
 
+## Version notes
+
+The two functions on this page have different floors, read from the published types:
+
+| Symbol | Floor |
+| ------ | ----- |
+| `getState` | 17.2.0 |
+| `watchState` | **18.0.0** |
+
+On `@ngrx/signals` 17 there is no `watchState`, so every-intermediate-value observation has to be built from `effect` plus `getState`, which coalesces and therefore cannot see intermediate values at all. If you need an undo stack on 17, record it in the methods that mutate.
+
+There is no devtools entry point in `@ngrx/signals` at any version, which is why `getState` and `watchState` are the logging story. See [install.md](install.md).
+
+## Gotchas
+
+- Agent uses `getState` in an `effect` and expects every intermediate value - `effect` is glitch-free, so several `patchState` calls in one tick produce one notification with the final value. That is `watchState`'s job
+- Agent uses `watchState` for logging - it fires on every write, so a noisy store floods the console. `getState` in an `effect` is usually what was wanted
+- Agent calls `getState` outside a reactive context and expects it to keep tracking - it is a snapshot there
+- Agent calls `watchState` outside an injection context without `{ injector }` - the watcher then has no lifetime and leaks
+- Agent hydrates from storage in `onInit` and races the first fetch - the later write wins, and which one is later is timing-dependent. Prefer a `withState(() => inject(...))` factory when the value is available synchronously
+- Agent reaches for `unprotected` to hydrate - a store may patch its own state from inside `onInit`. Protection only blocks writes from outside
+- Agent persists whole state snapshots including derived slices - `withLinkedState` slices are real state and will round-trip. See [linked-state.md](linked-state.md)
+- Agent persists on every change with `watchState` and writes synchronously to `localStorage` - that is a synchronous write per keystroke. Debounce it
+
+## Related
+
+- [signal-store.md](signal-store.md) · [lifecycle-hooks.md](lifecycle-hooks.md) · [custom-store-features.md](custom-store-features.md) · [linked-state.md](linked-state.md) · [install.md](install.md)
+

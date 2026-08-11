@@ -186,3 +186,37 @@ export const BookSearchStore = signalStore(
 );
 ```
 
+## Version notes
+
+The core of this page is the oldest and most stable part of the library: `signalStore`, `withState`, `withComputed`, `withMethods`, `withHooks`, `patchState`, `getState` and `signalStoreFeature` are all present in the earliest published release, `@ngrx/signals` 17.2.0, and their shapes here are unchanged through 21.
+
+| Symbol | Floor, read from the published types |
+| ------ | ------------------------------------ |
+| `signalStore`, `withState`, `withComputed`, `withMethods`, `patchState`, `getState` | 17.2.0 |
+| `watchState` | 18.0.0 |
+| `deepComputed` | 18.1.0 |
+| `withProps` | 19.0.0 |
+| `withLinkedState` | 20.0.0 |
+
+Two things on this page are **not** library features and depend on your TypeScript configuration rather than your `@ngrx/signals` version:
+
+- `books().toSorted(...)` needs `lib` to include **ES2023**. The Angular CLI generates `"target": "ES2022"` with no explicit `lib`, so `lib` defaults from the target and this fails with **TS2550** in a default Angular 19, 20 or 21 project. Either raise `lib` to `ES2023`, or write `[...books()].sort(...)`.
+- The bare arrow shorthand in `withComputed`, which the library wraps in `computed()` for you, is a convenience. Writing `computed()` explicitly always works and is clearer once the body is more than one line.
+
+## Gotchas
+
+- Agent uses `books().toSorted(...)` on the Angular CLI's default tsconfig - TS2550, because `lib` resolves to ES2022. A tsconfig problem, not a store problem
+- Agent lists a `{ providedIn: 'root' }` store in a component's `providers` - that creates a second independent instance and the shared state silently splits in two
+- Agent patches a nested slice without spreading - `patchState(store, { filter: { query } })` replaces the whole `filter` and drops `order`. Use the function form and spread
+- Agent destructures values instead of signals - `const { books } = store` keeps the signal, `books()` does not. Pass signals and read at the point of use
+- Agent calls `patchState` from a component - state is protected by default and the compiler rejects it. Add a method to the store
+- Agent disables `protectedState` to make a test easier - use `unprotected` from `@ngrx/signals/testing`, which needs 19.1.0
+- Agent puts a side effect inside a `withComputed` body
+- Agent reads a state signal at `withMethods` factory time rather than inside the method body - that captures one value, not the signal
+- Agent adds a `withState` slice for something derivable, then keeps the two in sync by hand
+- Agent writes a `constructor` to inject dependencies - there is no constructor to write. Use `inject(...)` as a default parameter in the feature factory
+
+## Related
+
+- [rx-method.md](rx-method.md) · [lifecycle-hooks.md](lifecycle-hooks.md) · [custom-store-properties.md](custom-store-properties.md) · [linked-state.md](linked-state.md) · [private-store-members.md](private-store-members.md) · [testing.md](testing.md)
+
