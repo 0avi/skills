@@ -115,8 +115,35 @@ return name;
 
 The two features are complementary: null markers belong on **parameters and fields**, exactly where `Optional` does not.
 
+## Version notes
+
+`Optional` is Java 8, but **most of the API this page recommends is not**, and the recommended-methods table above spans four releases:
+
+| Member | Since |
+| ------ | ----- |
+| `map`, `flatMap`, `filter`, `orElse`, `orElseGet`, `orElseThrow(Supplier)`, `ifPresent`, `get` | 8 |
+| `or(Supplier)`, `stream()`, `ifPresentOrElse` | 9 |
+| `orElseThrow()` no-arg | 10 |
+| `isEmpty()` | 11 |
+
+This matters because [java-versions.md](java-versions.md) grants Java 8 an explicit hall pass, and **on Java 8 none of the fluent chains on this page compile**. There, keep the `Optional` return type - that is the part carrying the benefit - and write the fallback with nested `orElseGet` rather than `or`. `Objects.requireNonNullElse` also needs 9, `var` needs 10, and `isBlank()` needs 11.
+
+## Gotchas
+
+- Agent chains `.isPresent()` then `.get()` - the exact shape this page bans
+- Agent writes `.get()` - `orElseThrow()` reads the same and names the failure. It needs Java 10; on 8 or 9 use `orElseThrow(NoSuchElementException::new)`
+- Agent writes `.orElse(expensive())` - `orElse` always evaluates its argument, even when the value is present. Use `orElseGet`
+- Agent maps through a function that can return `null` - `map` folds that into `empty()`, so "absent" and "present but null" become indistinguishable
+- Agent returns `Optional<List<T>>` - return an empty list. Absence and emptiness are the same thing for a collection
+- Agent puts `Optional` on a record component - it is not `Serializable`, it allocates per instance, and it makes the component's absence expressible two ways
+- Agent puts `Optional` on a controller parameter or a `@ConfigurationProperties` field - binders expect a plain value or `null`
+- Agent uses `Optional.of` at a boundary where `null` genuinely arrives - `of` throws; `ofNullable` is the adapter
+- Agent uses `Optional::stream` or `or` on a Java 8 project - both are Java 9
+- Agent wraps an already-`Optional` return in another `Optional` - use `flatMap`, not `map`
+
 ## Related
 
 - [var.md](var.md) - the `Opt` suffix for `Optional` locals
 - [record-patterns.md](record-patterns.md) - where `null` re-enters via pattern matching
 - [switch.md](switch.md) - `case null`
+- [java-versions.md](java-versions.md) - the Java 8 hall pass this page's API surface collides with

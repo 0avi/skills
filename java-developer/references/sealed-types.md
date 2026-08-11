@@ -72,6 +72,32 @@ Avoid until something concretely demands it:
 - Every permitted subtype must be `final`, `sealed`, or `non-sealed` - the compiler forces the choice.
 - If the hierarchy is recompiled separately and gains a subtype, an old switch throws `MatchException` rather than silently misbehaving.
 
+## Version notes
+
+Sealed types are **Java 17**, but the payoff described above arrives in stages, and the exhaustive switch that justifies sealing is Java 21:
+
+| Feature | Since |
+| ------- | ----- |
+| `sealed`, `permits`, `non-sealed` | 17 |
+| Records as the alternatives | 16, so available wherever sealing is |
+| Exhaustive `switch` over the hierarchy with no `default` | **21** |
+| `MatchException` when a separately recompiled hierarchy gains a subtype | 21 |
+| `_` for components a pattern does not need | 22 |
+
+**On Java 17 to 20 you can seal but you cannot switch over it.** Sealing still buys the closed subtype list and the compiler's modifier enforcement, but the type-pattern switch shown above needs 21, so pair sealing with an `instanceof` chain until then. Below 17 there is no sealing: use an ordinary interface, document the intended alternatives, and keep the `default` branch that throws.
+
+## Gotchas
+
+- Agent seals a hierarchy on Java 17 and then generates the exhaustive `switch` from this page - the switch needs 21 and will not compile
+- Agent writes a permitted subtype with no modifier - rejected. Every permitted subtype must be `final`, `sealed`, or `non-sealed`, and the compiler forces the choice
+- Agent adds `default -> throw ...` to the switch anyway - that discards the whole benefit. A new alternative should break the build
+- Agent reaches for `non-sealed` to make one branch extensible - that branch loses exhaustiveness permanently. If callers outside need to implement it, an ordinary interface was the right model
+- Agent puts permitted subtypes in another module - sealing does not cross module boundaries, and in an unnamed module they must share a package
+- Agent seals a closed set of constants with no per-alternative data - that is an `enum`
+- Agent seals a hierarchy a framework proxies or deserialises into - proxying a final record alternative is not possible, so check the framework first
+- Agent builds a deep multi-level sealed hierarchy - legal, and much harder to read than a flat one. Flatten unless a level is carrying its weight
+- Agent omits `permits` when the subtypes are in separate files - `permits` may only be omitted when every subtype is in the same source file
+
 ## Related
 
 - [records.md](records.md) · [switch.md](switch.md) · [patterns.md](patterns.md) · [data-oriented-programming.md](data-oriented-programming.md)

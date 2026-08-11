@@ -44,6 +44,33 @@ There is no `SequencedMap.of` / `SequencedSet.of` factory, so Guava is the clean
 - Never let a test, log format or serialised output depend on `Set.of` / `Map.of` order.
 - Remember `Set.of` / `Map.of` throw on `null` elements and on duplicate keys - they are not drop-in replacements for a `HashMap` that tolerated either.
 
+## Version notes
+
+The table at the top of this page spans five releases, and the two entries it recommends most are the two newest:
+
+| API | Since |
+| --- | ----- |
+| `Collectors.toList()`, `Collections.unmodifiable*` | 8 |
+| `List.of` / `Set.of` / `Map.of` | 9 |
+| `List.copyOf` / `Set.copyOf` / `Map.copyOf` | 10 |
+| `Stream.toList()` | 16 |
+| `SequencedCollection`, so `getFirst()` / `getLast()` / `reversed()` | 21 |
+
+On Java 8 none of the factory methods exist: use `Collections.unmodifiableList(new ArrayList<>(...))` and accept that it is a view over a copy you control. `Stream.toList()` is Java 16, so on 8 to 15 `Collectors.toList()` is the only option and the mutability caveat above stands unavoidably.
+
+## Gotchas
+
+- Agent treats `Stream.toList()` and `List.copyOf(...)` as interchangeable - both are unmodifiable, but **`Stream.toList()` accepts `null` elements and `List.copyOf` throws `NullPointerException`**. They are not the same guarantee
+- Agent calls `Map.of` with more than ten pairs - rejected at compile time; `Map.of` has a ten-pair ceiling. Use `Map.ofEntries`, or Guava's builder
+- Agent migrates a `HashMap` that held a `null` value to `Map.of` - throws `NullPointerException` at construction, not at use
+- Agent migrates a map that had a duplicate key to `Map.of` - throws `IllegalArgumentException`, where `HashMap` silently kept the last value
+- Agent writes `List.of(null)` - it compiles, then throws at runtime. The compiler will not catch this one
+- Agent reaches for `Collections.unmodifiableList` for a defensive copy - it wraps a live list. Mutating the original is visible through the wrapper; `copyOf` snapshots
+- Agent asserts on `Map.of(...).toString()` or on the first element of a `Set.of` - the order differs between JVM runs, so it passes locally and fails in CI
+- Agent fixes a flaky order-dependent test by sorting the assertion instead of using an ordered type - use `ImmutableMap` or a `LinkedHashMap` when order is part of the contract
+- Agent calls `.add()` on a `Stream.toList()` result expecting an `ArrayList` - it is `ImmutableCollections$ListN` and throws `UnsupportedOperationException`
+- Agent uses `Set.of` for a value that arrives from user input where duplicates are possible - duplicates throw rather than collapse
+
 ## Related
 
 - [immutability.md](immutability.md) · [records.md](records.md)

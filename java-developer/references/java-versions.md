@@ -59,6 +59,44 @@ mvn -U org.openrewrite.maven:rewrite-maven-plugin:run \
 
 **Always review the diff.** OpenRewrite is mechanical: it will convert an `instanceof` chain faithfully, but it will not tell you the design should have been a sealed hierarchy.
 
+## Version notes
+
+This page is the skill's version reference. Every floor below was established by compiling a minimal example of the exact idiom at each release from 8 to 25 with `javac --release`, and recording the lowest release that compiles. Use it to answer "can this project have that?" before generating anything.
+
+| Release | What becomes available |
+| ------- | ---------------------- |
+| 8 | The `Optional` core API, `Collectors.toList()`, `Collections.unmodifiable*`, `java.time` |
+| 9 | `List.of` / `Set.of` / `Map.of`, `Optional.or` / `stream` / `ifPresentOrElse`, `Objects.requireNonNullElse`, JPMS |
+| 10 | `var`, `List.copyOf` / `Set.copyOf` / `Map.copyOf`, `Optional.orElseThrow()` no-arg |
+| 11 | `String.isBlank()` / `strip()`, `Optional.isEmpty()`, `var` in lambda parameters |
+| 13 | `String.formatted()` |
+| 14 | Arrow `switch`, statement and expression, and `yield`. `jpackage` |
+| 15 | Text blocks |
+| 16 | **Records.** `instanceof` type patterns. `Stream.toList()` |
+| 17 | **Sealed types**, `non-sealed` |
+| 21 | **Pattern `switch`, `when` guards, `case null`, record patterns.** `MatchException`, `SequencedCollection` (`getFirst` / `getLast` / `reversed`), virtual threads |
+| 22 | Unnamed variables and patterns (`_`), the Foreign Function & Memory API |
+| 23 | Markdown doc comments (`///`) - a javadoc tool change, so `///` compiles as an ordinary comment on any release and simply produces no documentation below 23 |
+| 24 | Stream gatherers (`Stream.gather`, `Gatherers`) |
+| 25 | `ScopedValue`, `java.lang.IO`, compact source files with instance `main`, module import declarations |
+
+Three results that surprise people, all measured rather than assumed:
+
+- **`String.formatted()` resolves from 13**, before text blocks themselves. Text blocks need 15, so 15 is the floor for the combined idiom.
+- **`_` as a variable name compiles on Java 8**, where it is an ordinary identifier. It is rejected from 9 to 21, and only means "unnamed variable" from 22. See [smaller-features.md](smaller-features.md).
+- **`ScopedValue` is 25**, not 21, so the standard virtual-threads advice to prefer it over `ThreadLocal` does not apply on a Java 21 LTS project. See [modern-apis.md](modern-apis.md).
+
+## Gotchas
+
+- Agent reads the installed JDK from `java -version` and treats that as the target - the build configuration is authoritative, and projects routinely build on a newer JDK than they target
+- Agent finds `maven.compiler.source` / `target` and leaves them - `release` is the one that validates against the correct API surface. Source and target can be set to 8 while a Java 11 method still compiles
+- Agent sees Java 25 installed and generates 25 features for a project whose `release` is 17
+- Agent checks the language version but not the API - most of what breaks is library surface, not syntax. `Optional.or` on Java 8 is the classic
+- Agent runs an OpenRewrite recipe and reports it as done without reading the diff - it converts faithfully and will not tell you the design should have been a sealed hierarchy
+- Agent proposes leaving a codebase on 11 or 17 as "modern enough" - 21 is where records, sealed types and patterns first combine, per [data-oriented-programming.md](data-oriented-programming.md)
+- Agent treats the Java 8 hall pass as permission to write Java 8 style on a Java 21 project - it applies to codebases genuinely stuck on 8
+- Agent sets a Gradle `sourceCompatibility` rather than a toolchain - the toolchain pins the compiling JDK, not just the bytecode level
+
 ## Related
 
 - [checklist.md](checklist.md) · [smaller-features.md](smaller-features.md)

@@ -80,4 +80,36 @@ Records express **AND**, sealed types **OR**, patterns **operate**, enums **vali
 
 ---
 
-_Codifies Stephen Colebourne's_ New Java Best Practices _(2025), successor to his_ Java 8 Best Practices _(2016)._
+## Version notes
+
+Rules 1 and 2 apply on every release. **The rest are gated**, and applying one below its floor produces code that does not compile:
+
+| Rules | Need at least |
+| ----- | ------------- |
+| 9, 10, 12 (immutability, composition), and the carried-over `java.time` rule | 8 |
+| 11 (`Set.of` / `Map.of` ordering) | 9 |
+| 13, 14 (`Optional` API beyond the Java 8 core) | 9, and 10 for `orElseThrow()` |
+| 16 (`var`) | 10 |
+| 4 (text blocks) | 15 |
+| 18 (`instanceof` type patterns), 20 (records) | 16 |
+| 22 (sealed types) | 17 |
+| 17 (arrow `switch`) | 14 for the form, **21** for pattern cases |
+| 19 (record patterns) | 21 |
+| 5 (`_`) | 22 |
+| 7 (Markdown doc comments) | 23 |
+| 3, 6 (module import declarations) | 25 |
+
+The full verified table, including the API-level floors that catch people out, is in [java-versions.md](java-versions.md). Establish the project's release before running a review pass with this list, or half the findings will be unactionable.
+
+## Gotchas
+
+- Agent reviews against this list without establishing the Java release first - most rules are gated, and the finding "use a record here" is noise on a Java 11 project
+- Agent reports every deviation as a defect - each rule links to the reference that states when it does not apply. Read that before filing
+- Agent treats the list as a generation checklist - it is written for a review pass over existing code
+- Agent flags a mutable accumulator inside one method - confined mutability is explicitly allowed, and the `mutableXxx` naming is the tell that it was deliberate
+- Agent flags Lombok in a Lombok codebase and rewrites files piecemeal - raise it, match the surrounding code, and keep removal as its own change
+- Agent counts 22 rules as 22 separate commits - several are one design decision, and the records-versus-beans choice (20, 21) is a system-level one
+
+## Related
+
+- [java-versions.md](java-versions.md) · [data-oriented-programming.md](data-oriented-programming.md) · [records.md](records.md) · [beans-vs-records.md](beans-vs-records.md) · [optional-and-null.md](optional-and-null.md) · [switch.md](switch.md)

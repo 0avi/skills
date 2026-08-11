@@ -38,6 +38,30 @@ Adopt them only for:
 - Use `opens` for the specific packages a framework reflects over. Never `open module`.
 - Run CI on the module path - it is the only configuration where the declarations take effect.
 
+## Version notes
+
+JPMS is **Java 9**, and the verdict on this page has not changed since: do not modularise application code on any release from 9 to 25.
+
+| Related feature | Since |
+| --------------- | ----- |
+| `module-info.java`, `exports`, `opens`, `requires`, `provides` / `uses` | 9 |
+| `jlink` | 9 |
+| `jpackage` | 14 |
+| `import module java.base;` module import declarations | 25, and also to avoid - see [smaller-features.md](smaller-features.md) |
+
+On Java 8 none of this exists, which is one fewer decision to make. Sealed types (17) interact with modules: a sealed hierarchy's permitted subtypes must share a module, or a package in an unnamed module. That is the one place where module boundaries affect ordinary code, and it is covered in [sealed-types.md](sealed-types.md).
+
+## Gotchas
+
+- Agent adds `module-info.java` to solve a package-structure or layering problem - encapsulation is a property of the module path, not the file. Use build modules or ArchUnit
+- Agent adds `module-info.java` and keeps launching on the class path - `module-info.class` is then ignored entirely and nothing is enforced
+- Agent broadens to `open module` to make a reflective framework work - that opens everything and the exercise was pointless
+- Agent adds `requires` for a non-modular JAR and relies on the automatic module name - derived from the filename, and library authors warn against depending on it
+- Agent hits a split package and works around it with `--patch-module` - two modules cannot share a package; the workaround will not survive
+- Agent modularises to shrink a container image - `jlink` is the reason to do that, and it is a packaging decision, not an architecture one
+- Agent runs CI only on the class path for a modular library - the declarations only take effect on the module path, so both need testing
+- Agent uses unqualified `exports` when one consumer needs the package - prefer `exports x to y`
+
 ## Related
 
 - [smaller-features.md](smaller-features.md) - module import declarations, also to avoid

@@ -85,6 +85,30 @@ Record patterns call the accessors, so:
 - **Never use an array component** in a record you destructure - you bind an aliased mutable reference.
 - **Never override an accessor** to return something derived or lazily computed. A pattern is expected to be a faithful deconstruction; an accessor that lies makes the pattern lie.
 
+## Version notes
+
+Record patterns are **Java 21**, at any nesting depth. The match-all `_` used to skip components is **Java 22**.
+
+| Feature | Since |
+| ------- | ----- |
+| Record patterns, nested arbitrarily, in `instanceof` and in `switch` | 21 |
+| `_` in place of a component pattern | 22 |
+| `Objects.requireNonNullElse`, used in the guard example above | 9 |
+
+On Java 21 exactly, every component must be named, so write `var ignoredCity` where this page writes `_`. Below 21 there are no record patterns: call the accessors. The `null` rule described below is unchanged across 21 to 25.
+
+## Gotchas
+
+- Agent writes `_` on a Java 21 project - unnamed variables are 22. The compiler says `use -source 22 or higher to enable unnamed variables`
+- Agent omits a component from a record pattern - rejected. Every component needs a pattern, even if it is `_` or an ignored `var`
+- Agent inverts the null rule - a **narrower** component type performs a runtime test and so excludes `null`; `var` or the declared type is unconditional and lets `null` through. It is the explicit narrowing type that protects you, not `var`
+- Agent adds `when x != null` guards to every case instead of validating in the record's compact constructor - fix it upstream once
+- Agent destructures a record with an array component - the binding aliases the caller's array
+- Agent destructures a record whose accessor is overridden to compute something - the pattern reports whatever the accessor returns, so a lying accessor makes the pattern lie
+- Agent mixes `var` and redundant explicit types in one pattern - pick the codebase's convention and hold it
+- Agent uses an explicit type intending only documentation - it is not documentation, it is a runtime test that changes null behaviour
+- Agent nests a pattern for a non-record type - deconstruction patterns exist only for records in Java 25
+
 ## Related
 
 - [patterns.md](patterns.md) · [records.md](records.md) · [var.md](var.md) · [switch.md](switch.md)

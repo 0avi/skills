@@ -79,6 +79,32 @@ try (var arena = Arena.ofConfined()) {          // always scope allocations in t
 - **Migrate existing JNI or `Unsafe` memory-access code.** `Unsafe`'s memory methods are being removed.
 - Use `jextract` to generate bindings from a C header rather than writing them by hand.
 
+## Version notes
+
+The table at the top of this page carries each API's release. Verified floors for the exact code shown:
+
+| API as used above | Since |
+| ----------------- | ----- |
+| `Executors.newVirtualThreadPerTaskExecutor()` | 21 |
+| `Linker`, `Arena.ofConfined()`, `arena.allocateFrom(...)` | 22 |
+| `Stream.gather` with `Gatherers.windowFixed` / `scan` / `mapConcurrent` | 24 |
+| `ScopedValue` | **25** |
+
+`ScopedValue` is the trap: the virtual threads advice above recommends it over `ThreadLocal`, and it is a Java 25 API. On 21 to 24 it is not available as a final API, so keep `ThreadLocal` there and revisit on 25. Gatherers are 24, so on a Java 21 LTS project the whole of that section is unavailable and a loop is the correct answer.
+
+## Gotchas
+
+- Agent recommends `ScopedValue` on a Java 21 project - it is 25. `ThreadLocal` is the only option on 21 to 24
+- Agent generates gatherer code on Java 21 - `Stream.gather` is 24
+- Agent pools virtual threads, or sizes a virtual thread executor - one per task, then let it die. Pooling defeats the design
+- Agent moves CPU-bound work onto virtual threads for throughput - they give nothing there; use the common `ForkJoinPool`
+- Agent hand-rolls a virtual thread executor when the framework has a one-line switch - take the switch
+- Agent rewrites working stream pipelines to use gatherers because they are new - the page says explicitly not to
+- Agent writes a custom `Gatherer` for a one-off transformation - prefer the built-ins; custom gatherers earn their place only when reused
+- Agent allocates in an `Arena` without try-with-resources - the memory's lifetime is the arena's, and a confined arena must be closed on the thread that made it
+- Agent reaches for the FFM API for something a pure-Java library already does - most applications never need it
+- Agent leaves `sun.misc.Unsafe` memory access in place - the memory methods are being removed, so that is a migration, not a preference
+
 ## Related
 
 - [java-versions.md](java-versions.md) · [checklist.md](checklist.md)

@@ -113,6 +113,31 @@ Good for scripts and compact source files, where it is implicit anyway. **Do not
 
 Keep explicit imports and let the IDE manage them. See [modules.md](modules.md).
 
+## Version notes
+
+The verdict table at the top of this page carries each feature's release. Two details are sharper than that table suggests:
+
+| Detail | Behaviour |
+| ------ | --------- |
+| `String.formatted()` | Resolves as far back as `--release 13`, earlier than text blocks themselves. Text blocks need 15, so 15 is the floor for the idiom on this page |
+| `_` as a variable name | **Compiles on Java 8** as an ordinary identifier called `_`, is rejected from 9 to 21, and is an unnamed variable from 22 |
+| `java.lang.IO` and `IO.println` | 25, alongside compact source files |
+| `import module java.base;` | 25 |
+
+The `_` behaviour is the one to watch. On a Java 8 project `catch (IOException _)` compiles, but `_` is just a variable name, so the claim that "the compiler enforces it is unused" is false there: it is an ordinary binding that happens to be ignored. From 9 to 21 the same line fails with `use -source 22 or higher to enable unnamed variables`.
+
+## Gotchas
+
+- Agent generates `_` on a project below 22 - either a compile error (9 to 21) or, on 8, a silently ordinary variable that the compiler will not police
+- Agent interpolates a variable into a text block with `.formatted()` for SQL, HTML or a shell command - that is the injection this page warns about. Parameterise
+- Agent uses a text block for a single-line string - it buys nothing and adds a trailing newline decision
+- Agent forgets that the closing delimiter's indentation sets the strip level, so moving the `"""` changes the string's content
+- Agent adds a trailing newline to a text block without noticing - the closing delimiter on its own line means the content ends with `\n`. Put the delimiter on the content's last line to suppress it
+- Agent swallows an exception with `catch (Exception _)` and adds no comment - `_` states unused, never why. Ask first whether the exception should be unused at all
+- Agent converts a whole codebase's Javadoc to `///` in one pull request - the page says opportunistically, never en masse
+- Agent adds `import module java.base;` to application code because it is new and shorter - the verdict is avoid
+- Agent rewrites an application's `public static void main` to the instance form as a modernisation - it is one line in the codebase and changes nothing. Adopt it for scripts
+
 ## Related
 
 - [java-versions.md](java-versions.md) - which of these the project can use

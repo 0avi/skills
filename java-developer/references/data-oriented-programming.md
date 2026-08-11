@@ -86,6 +86,32 @@ Decide at system level, record the decision, apply it consistently:
 - Records for AND, sealed for OR, patterns to operate, enums to validate.
 - Validate at the boundaries; trust the interior.
 
+## Version notes
+
+The four features combine only on **Java 21**. The worked example above needs 21 for the record patterns in the `switch`, and 22 for the `_`:
+
+| Piece of the style | Since |
+| ------------------ | ----- |
+| Enums to validate | 8 |
+| Records to compose | 16 |
+| Sealed types to constrain | 17 |
+| Patterns to operate, in a `switch`, with exhaustiveness | **21** |
+| `_` for the component the example ignores | 22 |
+
+This is why [java-versions.md](java-versions.md) says not to stop at 11 or 17: you can hold three of the four pieces on 17 and still not have the compiler proving your handling is complete. On 17 to 20, write the records and the sealed interface, and dispatch with an `instanceof` chain until 21. On Java 8, immutability and `java.time` are what carry forward.
+
+## Gotchas
+
+- Agent adopts the style on Java 17 and generates the exhaustive switch - the switch is 21, and without it the compiler proves nothing
+- Agent half-adopts across a codebase - the page's central warning. Some payloads records, some beans, some hierarchies sealed, gets both sets of costs
+- Agent puts behaviour on the records - data-oriented means data separate from behaviour. Methods that derive a value from the record's own components are fine; anything with a collaborator is not
+- Agent re-validates in every service method - validate at the boundary, then trust the interior
+- Agent keeps a `String status` field rather than an enum - the whole point is letting the type do the validating
+- Agent models a growing, externally extended set as a sealed hierarchy - sealing is for alternatives you own and can enumerate
+- Agent uses a `type` discriminator plus nullable per-type fields - that is the shape this style replaces, and the strongest signal to refactor
+- Agent adds `default` to the dispatch switch, so a new alternative stops breaking the build
+- Agent applies the style to a single class as a local refactor - it is a whole-system commitment, decided and recorded at system level
+
 ## Related
 
 - [records.md](records.md) · [sealed-types.md](sealed-types.md) · [patterns.md](patterns.md) · [record-patterns.md](record-patterns.md) · [switch.md](switch.md) · [immutability.md](immutability.md) · [beans-vs-records.md](beans-vs-records.md)

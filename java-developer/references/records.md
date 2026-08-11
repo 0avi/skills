@@ -103,6 +103,34 @@ Records are **fully transparent**, irrevocably. That is what makes destructuring
 - Check `toString()` for sensitive data; override to redact.
 - Never add derived state, lazy caching, or overridden accessors - if you want those, generate a bean.
 
+## Version notes
+
+Records require **Java 16**. The other APIs used on this page are older: `List.copyOf` needs 10, `String.strip()` in the compact constructor needs 11.
+
+| Release | What this page gives you |
+| ------- | ------------------------ |
+| 8 to 15 | No records at all. Generate an immutable bean instead - see [beans-vs-records.md](beans-vs-records.md) |
+| 16 | Records, with the generated members described above |
+| 21 | Record patterns, so records become destructurable - see [record-patterns.md](record-patterns.md) |
+| 22 | `_` for components a pattern does not need |
+
+Nothing about a record declaration or its generated members changed between 16 and 25: a record written for 16 compiles unchanged on 25.
+
+## Gotchas
+
+- Agent writes `getName()` accessors on a record - the accessor is `name()`, and a framework reflecting for `getName()` finds nothing
+- Agent uses a record as a JPA `@Entity` - JPA needs a no-arg constructor and non-final fields. A record can be a DTO or a projection, never an entity
+- Agent assigns `this.name = name` inside the compact constructor - the compiler rejects it. Assign the *parameter*; the field assignment is implicit at the end
+- Agent writes both a compact and a canonical constructor - rejected. Pick one
+- Agent adds an instance field to the record body - rejected. Only `static` fields are permitted
+- Agent writes `abstract record`, or `record ... extends` - both rejected. Records are implicitly final and have a fixed superclass
+- Agent writes `final record` - legal but redundant, and it reads as though the modifier is doing something
+- Agent adds Lombok annotations to a record - the members already exist, and Lombok is banned. See [beans-vs-records.md](beans-vs-records.md)
+- Agent copies a collection defensively in the constructor, then overrides the accessor to hand back the caller's original - the copy achieved nothing
+- Agent validates inside an accessor rather than the compact constructor - too late, the invalid instance already exists
+- Agent keeps an array component and overrides `equals` to fix it - now `hashCode`, `toString` and the accessor all need overriding too, and destructuring still binds an aliased array
+- Agent logs a whole record for debugging - the generated `toString()` prints every component, so `ClientProfile[reference=R1, nino=QQ123456C, accountNumber=12345678]` lands in the log verbatim
+
 ## Related
 
 - [beans-vs-records.md](beans-vs-records.md) · [record-patterns.md](record-patterns.md) · [sealed-types.md](sealed-types.md) · [immutability.md](immutability.md)

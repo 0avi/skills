@@ -51,6 +51,30 @@ Without the suffix, `person.map(...)` reads as though `Person` has a `map` metho
 
 `var` also cannot be declared without an initialiser or initialised to `null`; the compiler rejects both.
 
+## Version notes
+
+`var` for local variables is **Java 10**. `var` for lambda parameters is **Java 11**.
+
+| Position | Since |
+| -------- | ----- |
+| Local variables, `for` loop variables, try-with-resources | 10 |
+| Lambda parameters, as in `(var a, var b) -> ...` | 11 |
+| Inside record patterns, where it also signals "not narrowed" | 21, with the patterns themselves |
+
+On Java 8 and 9 there is no `var`, so the "go all in" rule does not apply and the "name the data, not the type" rule becomes the whole of the advice. Nothing about `var` has changed between 10 and 25.
+
+## Gotchas
+
+- Agent writes `var x = null` or `var x;` - both rejected. `var` needs an initialiser with an inferable type
+- Agent uses `var` for a field or a method parameter - rejected. It is local variables only
+- Agent writes `var names = new ArrayList<String>()` and then passes it where `List<String>` is expected by reference-assigning it elsewhere - `var` infers `ArrayList<String>`, the implementation type, which leaks into anything inferring from it
+- Agent writes `var total = 0` and assigns a `long` later - inferred `int`, so the assignment fails or silently truncates. Declare `long total = 0`
+- Agent writes `var result = someMethod()` where the method returns a wildcard or intersection type - the inferred type can be unnameable, and the error surfaces far from the declaration
+- Agent uses `var` with a diamond, as in `var list = new ArrayList<>()` - infers `ArrayList<Object>`, which is almost never wanted
+- Agent applies `var` only to "obvious" cases - the arbitrary line is the thing this page argues against. Be consistent
+- Agent keeps a name like `list`, `map` or `str` after switching to `var` - the name is now the reader's only information source
+- Agent drops the `Opt` suffix on an `Optional` local - `person.map(...)` then reads as though `Person` has a `map` method
+
 ## Related
 
 - [record-patterns.md](record-patterns.md) - `var` inside record patterns, where it changes meaning, not just verbosity

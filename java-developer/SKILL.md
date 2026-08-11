@@ -19,6 +19,8 @@ Covers the language changes from Java 8 to Java 25.
 
 4. **After generating code, compile it and run the tests** with the project's build tool (`mvn -q verify`, `./gradlew build`). Do not skip this - patterns, sealed exhaustiveness and record component nullability fail at compile time in subtle ways.
 
+Every reference carries a **`## Version notes`** section stating what differs across Java 8 to 25, and a **`## Gotchas`** list of the specific mistakes agents make in that area. Read the gotchas even when skimming. Every version floor in those sections was established by compiling the idiom at each release with `javac --release`, not from documentation; the consolidated table is in [java-versions.md](references/java-versions.md).
+
 ## Determining the Java Version
 
 **Step 1.** Read the build config - authoritative, not the installed JDK. Maven: `maven.compiler.release`, or `source`/`target`. Gradle: `java.toolchain.languageVersion`, `sourceCompatibility`, `options.release`. Also `.sdkmanrc`, `.tool-versions`, `.java-version`, CI workflows.
