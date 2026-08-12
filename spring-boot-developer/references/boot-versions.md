@@ -42,6 +42,7 @@ This is the reference for both migration and for judging whether a given API exi
 | Flyway / Liquibase | **No longer transitive** from the JDBC/JPA starters. Declare `spring-boot-starter-flyway` or `-liquibase` or migrations silently never run |
 | Optional dependencies | Excluded from the repackaged jar by default; set `<includeOptional>true</includeOptional>` if you rely on them |
 | Auto-configuration internals | Members of auto-configuration classes are no longer public API - do not reach into them |
+| **Auto-configuration follows the module** | A `spring.*` property whose owning module is absent **binds to nothing and reports nothing**. Verified on 4.1.0: `spring.data.web.pageable.serialization-mode=VIA_DTO` is silently ignored with only `spring-boot-starter-web` and `spring-data-commons` present, and takes effect as soon as `spring-boot-data-commons` is added. Same failure shape as the Flyway row above, one layer further in |
 | Transitional | `spring-boot-starter-classic` / `-test-classic` bundle the old monolithic set. Migration aid only |
 
 The renamed starters are **deprecated, not removed** - an old name still resolves on 4.x. Use the new name in new code; the build will not fail on the old one.
