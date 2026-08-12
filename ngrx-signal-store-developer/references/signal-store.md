@@ -54,7 +54,7 @@ export const BooksStore = signalStore(
     // Bare arrow shorthand is auto-wrapped in `computed()`
     sortedBooks: () => {
       const dir = filter() === 'asc' ? 1 : -1;
-      return books().toSorted((a, b) => dir * a.title.localeCompare(b.title));
+      return [...books()].sort((a, b) => dir * a.title.localeCompare(b.title));
     },
   })),
 );
@@ -159,7 +159,7 @@ export const BookSearchStore = signalStore(
     booksCount: computed(() => books().length),
     sortedBooks: computed(() => {
       const dir = filter.order() === 'asc' ? 1 : -1;
-      return books().toSorted((a, b) => dir * a.title.localeCompare(b.title));
+      return [...books()].sort((a, b) => dir * a.title.localeCompare(b.title));
     }),
   })),
   withMethods((store, booksService = inject(BooksService)) => ({
@@ -200,7 +200,7 @@ The core of this page is the oldest and most stable part of the library: `signal
 
 Two things on this page are **not** library features and depend on your TypeScript configuration rather than your `@ngrx/signals` version:
 
-- `books().toSorted(...)` needs `lib` to include **ES2023**. The Angular CLI generates `"target": "ES2022"` with no explicit `lib`, so `lib` defaults from the target and this fails with **TS2550** in a default Angular 19, 20 or 21 project. Either raise `lib` to `ES2023`, or write `[...books()].sort(...)`.
+- The examples above deliberately write `[...books()].sort(...)` rather than `books().toSorted(...)`. `toSorted` needs `lib` to include **ES2023**, and the Angular CLI generates `"target": "ES2022"` with no explicit `lib`, so `lib` defaults from the target and `toSorted` fails with **TS2550** in a default Angular 19, 20 or 21 project. The spread-and-sort form compiles from ES2015 upwards, and copying first is what stops `sort` mutating the state array in place.
 - The bare arrow shorthand in `withComputed`, which the library wraps in `computed()` for you, is a convenience. Writing `computed()` explicitly always works and is clearer once the body is more than one line.
 
 ## Gotchas
