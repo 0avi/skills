@@ -11,6 +11,7 @@
 | [`angular-spring-contract`](angular-spring-contract/SKILL.md) | Owns the **contract** between an Angular frontend and a Spring Boot backend, and nothing inside either: the OpenAPI document and what the generator makes of it, the Postgres to Java to wire to TypeScript type pipeline, dates and times, RFC 9457 `ProblemDetail` on the client, auth end to end (token storage, single-flight refresh, 401 mid-request, guards), pagination envelopes, optimistic concurrency, upload limits, and `traceparent` propagation. Install it **alongside** the skills above; it defers everything inside a single layer to them. Every wire format was captured from running Spring Boot 3.5.16 and 4.1.0 applications. |
 | [`angular-accessibility`](angular-accessibility/SKILL.md) | Takes an Angular application to **WCAG 2.2 AA**, covering what sits outside a single widget: focus and announcement across route changes and dialogs, perceivable form errors, colour and target size, the criteria new in 2.2, and what automated tooling provably cannot see. A deliberate **gap-filler** for the official [`angular-developer`](https://github.com/angular/skills) skill, which owns widget-level ARIA and is never restated here. Rule counts and contrast ratios are computed, not asserted. |
 | [`css-developer`](css-developer/SKILL.md) | Organises, writes and maintains a project's whole **style layer**, independent of framework and component library: the cascade and `@layer` as the architecture rather than as a trick, where a declaration goes, design token tiers and the runtime versus compile-time split that decides what can ever be themed, **which of plain CSS, SCSS or Sass to pick and why** including what changes when Tailwind is in the picture, utility classes against semantic classes, support floors, container queries, and introducing style linting to a project that has none. Takes **no position** on which UI or component library you use. Every cascade rule was measured on Chromium 151, Firefox 153 and WebKit 26.5 with zero engine disagreement; the Sass and Tailwind interactions were measured by compiling them; support dates are computed from the `web-features` dataset. |
+| [`spring-sso-developer`](spring-sso-developer/SKILL.md) | Implements **Single Sign-On** in Java and Spring, for internal organisational SSO and for SSO-as-a-feature in multi-tenant SaaS. Spring Security as an **OIDC/OAuth2 client and resource server**, **SAML 2.0** service provider, **Spring Authorization Server**, and **SCIM provisioning** from RFC 7644. A full attack catalogue split by protocol - PKCE, `state`, `nonce`, redirect-URI matching, algorithm confusion, mix-up, XML Signature Wrapping, XXE, assertion replay, session fixation, logout propagation, deprovisioning and multi-tenant isolation - cross-checked against **OWASP ASVS 5.0**. Plus **13 provider files** (Entra ID, Okta, Keycloak, Auth0, Google Workspace, Cognito, AD FS, Ping, OneLogin, Shibboleth, WorkOS, Entra External ID and a procedure for the rest), each verified against that vendor's own documentation, indexed by cross-vendor tables showing **where role information actually lives**, which issuer strings surprise you, and what to use as a primary key. Also **SCIM provisioning** from RFC 7644, **frontend integration** for SPA-plus-BFF shapes, and both logout directions including **OIDC back-channel logout**. Covers **Boot 4.x with Spring Security 7 and Boot 3.5.x with 6.5**. Every Spring identifier and default was read from the 7.1.0 reference or the source at the version tag, and every file states what it could **not** verify. Exactly one CVE is cited because exactly one was verified against the vendor advisory. The skill was then put through an **independent adversarial review**, whose 15 findings were each re-verified against primary sources before being applied; the 106-rule review checklist and the ASVS V9 and V10 cross-check came out of that pass. |
 
 ## Using these skills
 
@@ -19,19 +20,19 @@ Agent Skills are designed to be used with agentic coding tools like Claude Code,
 To use these skills in your own environment you may follow the instructions for your specific tool or use a community tool like [skills.sh](https://skills.sh).
 
 <details open>
-<summary><b>npm</b></summary>
-
-```bash
-npx skills add https://github.com/0avi/skills
-```
-
-</details>
-
-<details>
 <summary><b>pnpm</b></summary>
 
 ```bash
 pnpm dlx skills add https://github.com/0avi/skills
+```
+
+</details>
+
+<details open>
+<summary><b>npm</b></summary>
+
+```bash
+npx skills add https://github.com/0avi/skills
 ```
 
 </details>
