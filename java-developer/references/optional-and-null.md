@@ -23,10 +23,12 @@ public Optional<Person> findPerson(String id) { ... }
 // ❌ Optional parameter
 public void register(String name, Optional<String> nickname) { ... }
 
-// ✅ overloads
+// ✅ overloads, and mark the nullable one
 public void register(String name) { register(name, null); }
-public void register(String name, String nicknameOrNull) { ... }
+public void register(String name, @Nullable String nickname) { ... }
 ```
+
+Two things follow from choosing overloads. **Keep them contiguous** - methods sharing a name form one unbroken group with no other member in between, even where modifiers differ, because a reader comparing the overloads should not have to scroll past unrelated code. And **mark the nullable parameter**, since the overload pair is exactly where a reader needs to know which argument may be `null`. That is what [nullness.md](nullness.md) is for.
 
 ## Avoid `isPresent()` and `isEmpty()`
 
@@ -115,6 +117,8 @@ return name;
 
 The two features are complementary: null markers belong on **parameters and fields**, exactly where `Optional` does not.
 
+**Those markers already exist.** You do not have to wait for the language feature: JSpecify's `@Nullable` and `@NullMarked` cover parameters, fields, array elements and generic type arguments today, and NullAway checks them. `Optional` on return types plus JSpecify everywhere else is the complete policy, and [nullness.md](nullness.md) is the other half of this page.
+
 ## Version notes
 
 `Optional` is Java 8, but **most of the API this page recommends is not**, and the recommended-methods table above spans four releases:
@@ -143,7 +147,9 @@ This matters because [java-versions.md](java-versions.md) grants Java 8 an expli
 
 ## Related
 
+- [nullness.md](nullness.md) - JSpecify `@Nullable` and `@NullMarked`, the other half of this policy
 - [var.md](var.md) - the `Opt` suffix for `Optional` locals
 - [record-patterns.md](record-patterns.md) - where `null` re-enters via pattern matching
 - [switch.md](switch.md) - `case null`
+- [exceptions-and-resources.md](exceptions-and-resources.md) - when absence is an exception instead
 - [java-versions.md](java-versions.md) - the Java 8 hall pass this page's API surface collides with

@@ -61,6 +61,17 @@ switch (day) {
 
 Add a `default` only to fail loudly, never to silently absorb cases.
 
+**Google Java Style agrees, and is worth citing when someone claims otherwise.** Its rule is that *every* switch is exhaustive, including the statement forms the language does not require it of. It defines exhaustive as "has a `default` label, **or** the selector is an enum and every constant is matched", so a complete enum switch and an exhaustive sealed switch already satisfy it with no `default`. The rule that "you may need to add a `default`, even an empty one" applies only where the labels genuinely do not cover everything - never as an argument for weakening a sealed switch. See [google-style-deltas.md](google-style-deltas.md).
+
+## Make the compiler and Error Prone do this
+
+Two tools enforce this page, and neither is on by default:
+
+- **`-Xlint:fallthrough`** warns `possible fall-through into case`. With `-Werror` that makes the label statement form this page tells you to ignore fail the build outright.
+- **Error Prone's `StatementSwitchToExpressionSwitch`** flags a statement switch that could be an arrow switch, groups neighbouring cases, and ships a suggested fix. It is on by default at `WARNING`.
+
+So "always prefer the arrow expression form" is a mechanical migration on a codebase with Error Prone wired up, not a manual pass. Review the diff. See [enforcement.md](enforcement.md).
+
 ## `case null`
 
 A `switch` on a reference throws `NullPointerException` unless `case null` is present. **Prefer removing the possibility of `null` upstream** - validate at the boundary and return `Optional`.
@@ -110,6 +121,8 @@ On Java 14 to 20, `switch (payment) { case CardPayment c -> ... }` does not comp
 
 - Agent generates a pattern switch on a Java 17 project - `case Type t ->` is 21. Arrow form alone is 14
 - Agent writes a statement switch missing enum constants and assumes the compiler will object - **it compiles silently** and the unmatched values do nothing. Only the expression form is checked
+- Agent maintains a legacy label switch without `-Xlint:fallthrough` on - the one hazard of that form is the one javac will warn about if asked
+- Agent cites Google Java Style 4.8.4.3 to justify adding an empty `default` to a sealed switch - read its definition of exhaustive; a complete sealed switch already qualifies
 - Agent adds `default -> throw new IllegalStateException()` to a switch over a sealed type - that converts a future compile error into a runtime one. Omit it
 - Agent orders guarded cases loosest-first - the first match wins, so the loose case swallows the rest
 - Agent adds `case null` reflexively - fix the `null` upstream instead; the case is for values genuinely outside your control

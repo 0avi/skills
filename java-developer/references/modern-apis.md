@@ -79,6 +79,28 @@ try (var arena = Arena.ofConfined()) {          // always scope allocations in t
 - **Migrate existing JNI or `Unsafe` memory-access code.** `Unsafe`'s memory methods are being removed.
 - Use `jextract` to generate bindings from a C header rather than writing them by hand.
 
+### Native access must be enabled
+
+**Every downcall is a restricted method, and the runtime will eventually refuse one that has not been granted access.** Run the code above on JDK 25 with no flag and it works, but prints:
+
+```
+WARNING: A restricted method in java.lang.foreign.Linker has been called
+WARNING: java.lang.foreign.Linker::downcallHandle has been called by Ffm in an unnamed module
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+```
+
+Grant it explicitly, naming the module rather than everything wherever you can:
+
+```bash
+java --enable-native-access=com.example.filing -jar app.jar   # modular
+java --enable-native-access=ALL-UNNAMED -jar app.jar          # class path
+```
+
+For an executable JAR, `Enable-Native-Access: ALL-UNNAMED` in the manifest does the same. At compile time `-Xlint:restricted` reports the same calls, and it is **not** in javac's default set - only `-Xlint:all` or naming the key surfaces it. See [enforcement.md](enforcement.md).
+
+Treat the warning as a future error: per that fourth line, restricted methods get blocked in a later release, so an FFM migration that ignores the flag ships a time bomb.
+
 ## Version notes
 
 The table at the top of this page carries each API's release. Verified floors for the exact code shown:
@@ -87,6 +109,9 @@ The table at the top of this page carries each API's release. Verified floors fo
 | ----------------- | ----- |
 | `Executors.newVirtualThreadPerTaskExecutor()` | 21 |
 | `Linker`, `Arena.ofConfined()`, `arena.allocateFrom(...)` | 22 |
+| `--enable-native-access` as a launcher option | Accepted on **21** as well as 25. Measured on both |
+| The runtime warning when it is **absent** | Measured on 25. Documented as arriving with JDK 24; not measured below 25 |
+| `-Xlint:restricted` | Absent on 21, present on 25. Measured on both |
 | `Stream.gather` with `Gatherers.windowFixed` / `scan` / `mapConcurrent` | 24 |
 | `ScopedValue` | **25** |
 
@@ -102,6 +127,9 @@ The table at the top of this page carries each API's release. Verified floors fo
 - Agent rewrites working stream pipelines to use gatherers because they are new - the page says explicitly not to
 - Agent writes a custom `Gatherer` for a one-off transformation - prefer the built-ins; custom gatherers earn their place only when reused
 - Agent allocates in an `Arena` without try-with-resources - the memory's lifetime is the arena's, and a confined arena must be closed on the thread that made it
+- Agent ships FFM code without `--enable-native-access` - it works today with four warning lines, and the last of them says restricted methods get blocked in a future release
+- Agent grants `--enable-native-access=ALL-UNNAMED` on a modular application - name the module instead; `ALL-UNNAMED` is the class-path answer
+- Agent compiles FFM code, sees no javac output, and reports it clean - `restricted` is not in javac's default lint set
 - Agent reaches for the FFM API for something a pure-Java library already does - most applications never need it
 - Agent leaves `sun.misc.Unsafe` memory access in place - the memory methods are being removed, so that is a migration, not a preference
 

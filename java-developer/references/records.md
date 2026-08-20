@@ -85,6 +85,21 @@ public record ClientProfile(String reference, String nino, String accountNumber)
 
 Better: keep sensitive values out of logged records, behind a dedicated type whose own `toString()` is safe.
 
+## Annotate overrides, document components
+
+**Every member you declare that a record would otherwise generate takes `@Override`** - including a component accessor. `@Override` on an accessor is legal and compiles, and it is the only marker that says "this replaces the generated one" rather than "this is an extra method someone added":
+
+```java
+public record ClientProfile(String reference, String nino) {
+  @Override
+  public String toString() { ... }        // replaces the generated toString
+}
+```
+
+Note the tension: the marker is worth writing, but overriding an accessor is itself a mistake - a pattern destructuring the record calls the accessor, so an accessor that computes or normalises makes the pattern lie. See [record-patterns.md](record-patterns.md). `@Override` on `equals`, `hashCode` or `toString` is fine; on an accessor it is a flag that the design went wrong.
+
+Document components with `@param` on the record declaration, never on the accessors. See [javadoc.md](javadoc.md).
+
 ## Do not use a record when you need
 
 - A computed or lazily cached property.
@@ -128,6 +143,8 @@ Nothing about a record declaration or its generated members changed between 16 a
 - Agent adds Lombok annotations to a record - the members already exist, and Lombok is banned. See [beans-vs-records.md](beans-vs-records.md)
 - Agent copies a collection defensively in the constructor, then overrides the accessor to hand back the caller's original - the copy achieved nothing
 - Agent validates inside an accessor rather than the compact constructor - too late, the invalid instance already exists
+- Agent declares `equals`, `hashCode` or `toString` on a record without `@Override` - javac never warns about a missing one at any lint level, so nothing catches it. Error Prone's `MissingOverride` does; see [enforcement.md](enforcement.md)
+- Agent documents record components with Javadoc on the accessors - they belong as `@param` on the record declaration
 - Agent keeps an array component and overrides `equals` to fix it - now `hashCode`, `toString` and the accessor all need overriding too, and destructuring still binds an aliased array
 - Agent logs a whole record for debugging - the generated `toString()` prints every component, so `ClientProfile[reference=R1, nino=QQ123456C, accountNumber=12345678]` lands in the log verbatim
 

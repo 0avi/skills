@@ -1,6 +1,6 @@
 # Patterns and Pattern Matching
 
-**Replace every `instanceof` + cast + assign with a type pattern.** This is unambiguously good and worth a dedicated pass over an existing codebase.
+**Replace every `instanceof` + cast + assign with a type pattern.** This is unambiguously good and worth a dedicated pass over an existing codebase - and Error Prone's `PatternMatchingInstanceof` will find every site for you, with a suggested fix, on by default at `WARNING`. See [enforcement.md](enforcement.md).
 
 ```java
 // ❌

@@ -74,13 +74,16 @@ This page is the skill's version reference. Every floor below was established by
 | 15 | Text blocks |
 | 16 | **Records.** `instanceof` type patterns. `Stream.toList()` |
 | 17 | **Sealed types**, `non-sealed` |
-| 21 | **Pattern `switch`, `when` guards, `case null`, record patterns.** `MatchException`, `SequencedCollection` (`getFirst` / `getLast` / `reversed`), virtual threads |
+| 18 | **UTF-8 becomes the default charset.** `Object.finalize()` deprecated for removal, and `--finalization=disabled` to prove nothing depends on it |
+| 21 | **Pattern `switch`, `when` guards, `case null`, record patterns.** `MatchException`, `SequencedCollection` (`getFirst` / `getLast` / `reversed`), virtual threads. `-Xlint:this-escape` |
 | 22 | Unnamed variables and patterns (`_`), the Foreign Function & Memory API |
 | 23 | Markdown doc comments (`///`) - a javadoc tool change, so `///` compiles as an ordinary comment on any release and simply produces no documentation below 23 |
 | 24 | Stream gatherers (`Stream.gather`, `Gatherers`) |
 | 25 | `ScopedValue`, `java.lang.IO`, compact source files with instance `main`, module import declarations |
 
-Three results that surprise people, all measured rather than assumed:
+Four results that surprise people, all measured rather than assumed:
+
+- **The default charset changed at 18, and `release` does not control it.** Charset is a property of the JVM that runs, not of the bytecode level you target, so `maven.compiler.release=17` still gets UTF-8 once the build and the application run on 18 or later. Measured on both JDK 21 and 25: `Charset.defaultCharset()` and `file.encoding` are `UTF-8` while `native.encoding` on the same machine is `Cp1252`. **Crossing 18 therefore changes behaviour in code that read or wrote files without naming a charset**, and it changes it at deployment rather than at compile time, which is the worst place to find out. Name the charset explicitly, and set `project.build.sourceEncoding` regardless of release.
 
 - **`String.formatted()` resolves from 13**, before text blocks themselves. Text blocks need 15, so 15 is the floor for the combined idiom.
 - **`_` as a variable name compiles on Java 8**, where it is an ordinary identifier. It is rejected from 9 to 21, and only means "unnamed variable" from 22. See [smaller-features.md](smaller-features.md).
@@ -92,6 +95,8 @@ Three results that surprise people, all measured rather than assumed:
 - Agent finds `maven.compiler.source` / `target` and leaves them - `release` is the one that validates against the correct API surface. Source and target can be set to 8 while a Java 11 method still compiles
 - Agent sees Java 25 installed and generates 25 features for a project whose `release` is 17
 - Agent checks the language version but not the API - most of what breaks is library surface, not syntax. `Optional.or` on Java 8 is the classic
+- Agent treats a migration past 18 as source-compatible and stops there - the default charset changes at runtime, so file and stream code that never named a charset changes behaviour
+- Agent assumes a doc-comment feature is gated by `release` - `///`, `{@return}` and `{@snippet}` track the javadoc tool version instead. See [javadoc.md](javadoc.md)
 - Agent runs an OpenRewrite recipe and reports it as done without reading the diff - it converts faithfully and will not tell you the design should have been a sealed hierarchy
 - Agent proposes leaving a codebase on 11 or 17 as "modern enough" - 21 is where records, sealed types and patterns first combine, per [data-oriented-programming.md](data-oriented-programming.md)
 - Agent treats the Java 8 hall pass as permission to write Java 8 style on a Java 21 project - it applies to codebases genuinely stuck on 8

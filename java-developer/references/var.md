@@ -47,9 +47,18 @@ Without the suffix, `person.map(...)` reads as though `Person` has a `map` metho
 | ---- | --- |
 | Fields, parameters, return types | `var` is illegal - and public signatures should always state their types |
 | You want the interface, not the implementation | `List<String> names = new ArrayList<>();` - `var` infers `ArrayList` |
-| A numeric literal whose width matters | `long timeoutMillis = 30_000;` - `var` infers `int` |
+| A numeric literal whose width matters | `long timeoutMillis = 30_000L;` - `var` infers `int` |
 
 `var` also cannot be declared without an initialiser or initialised to `null`; the compiler rejects both.
+
+## One variable per declaration, declared where it is used
+
+Two rules that `var` makes easier to keep rather than harder:
+
+- **One variable per declaration.** `int a, b;` is out. With `var` this is not even a choice: `var a = 1, b = 2;` is rejected outright with `'var' is not allowed in a compound declaration`. The exception is a `for` loop header.
+- **Declare a local close to its first use**, not in a block of declarations at the top of the method. Minimising the scope is the point, and it is what lets the name stay short.
+
+Write `long` literals with an uppercase `L` suffix: `30_000L`, never `30_000l`, which is indistinguishable from `30_0001` in most fonts.
 
 ## Version notes
 
@@ -67,6 +76,8 @@ On Java 8 and 9 there is no `var`, so the "go all in" rule does not apply and th
 
 - Agent writes `var x = null` or `var x;` - both rejected. `var` needs an initialiser with an inferable type
 - Agent uses `var` for a field or a method parameter - rejected. It is local variables only
+- Agent writes `var a = 1, b = 2;` - rejected with `'var' is not allowed in a compound declaration`. Split it into two lines
+- Agent writes a `long` literal with a lowercase `l` suffix - use `L`; `30_000l` reads as `30_0001`
 - Agent writes `var names = new ArrayList<String>()` and then passes it where `List<String>` is expected by reference-assigning it elsewhere - `var` infers `ArrayList<String>`, the implementation type, which leaks into anything inferring from it
 - Agent writes `var total = 0` and assigns a `long` later - inferred `int`, so the assignment fails or silently truncates. Declare `long total = 0`
 - Agent writes `var result = someMethod()` where the method returns a wildcard or intersection type - the inferred type can be unnameable, and the error surfaces far from the declaration

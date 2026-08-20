@@ -25,6 +25,15 @@ var query = """
 
 Incidental leading whitespace is stripped based on the closing delimiter's indentation. `\` at end of line suppresses the newline; `\s` keeps trailing spaces.
 
+Layout rules worth holding to, because they are what make the stripping predictable:
+
+- The opening `"""` goes on **its own line**, never with content after it.
+- The closing `"""` sits at the indentation the content should be stripped to, and code may follow it on the same line.
+- Every content line is indented at least as far as the delimiters. Indent one further and that line keeps the extra space.
+- A text block's contents are exempt from any column limit, so do not wrap SQL to satisfy a formatter.
+
+**Turn on `-Xlint:text-blocks`**, which warns about inconsistent white space in the indentation - the mistake that silently changes the string. See [enforcement.md](enforcement.md).
+
 **Never interpolate into SQL, HTML or shell commands.** Text blocks make embedding these pleasant, which is exactly what makes the injection mistake tempting.
 
 ```java
@@ -71,18 +80,13 @@ Valid for `catch` parameters, lambda parameters, `for` loop variables, `try`-wit
 ```java
 /// Returns the **net** amount after deductions.
 ///
-/// Deductions are applied in the order:
-///   - allowances
-///   - reliefs
-///
 /// @param gross the gross amount, not null
 /// @return the net amount, not null
 ```
 
-Javadoc tags work as normal; `[Text](url)` and `` `code` `` behave as expected.
+Javadoc tags work as normal; `[Text](url)` and `` `code` `` behave as expected. New or substantially rewritten code uses `///`; existing code is converted only as you touch it, **never en masse**.
 
-- New or substantially rewritten code: use `///`.
-- Existing code: convert only as you touch it. **Do not open a pull request rewriting every doc comment** - no bulk tooling exists, the diff is enormous, nested HTML mangles easily, and the benefit is cosmetic.
+`///` is one of three doc-comment features worth adopting, alongside `{@return}` (16) and `{@snippet}` (18), and all three are owned by [javadoc.md](javadoc.md) - including the rule that their availability tracks the **javadoc tool version rather than `--release`**.
 
 ---
 
@@ -107,7 +111,7 @@ import module java.base;   // imports every exported package of the module
 
 Good for scripts and compact source files, where it is implicit anyway. **Do not adopt in application code:**
 
-- It is a wildcard import with a far larger blast radius, and wildcard imports have been discouraged in Java for two decades.
+- It is a wildcard import with a far larger blast radius, and **wildcard imports are not used** - `import java.util.*;` and static wildcards alike. State that as its own rule; the module form is the extreme case of it, not a separate question.
 - Adopting it would require coordinated changes across IDEs, Checkstyle and static analysis, none of which is happening.
 - There is no coherent halfway rule - "`java.base` wholesale but nothing else" is arbitrary.
 
@@ -136,6 +140,7 @@ The `_` behaviour is the one to watch. On a Java 8 project `catch (IOException _
 - Agent swallows an exception with `catch (Exception _)` and adds no comment - `_` states unused, never why. Ask first whether the exception should be unused at all
 - Agent converts a whole codebase's Javadoc to `///` in one pull request - the page says opportunistically, never en masse
 - Agent adds `import module java.base;` to application code because it is new and shorter - the verdict is avoid
+- Agent tidies a long import list into `import java.util.*;` - wildcard imports are not used either, static ones included. Let the IDE manage explicit imports
 - Agent rewrites an application's `public static void main` to the instance form as a modernisation - it is one line in the codebase and changes nothing. Adopt it for scripts
 
 ## Related

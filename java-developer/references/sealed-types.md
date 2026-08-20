@@ -60,7 +60,7 @@ Avoid until something concretely demands it:
 ## Mechanics
 
 - Permitted subtypes must be in the same **module** (or same **package** in an unnamed module). Sealing does not cross module boundaries.
-- `permits` may be omitted when all subtypes are in the same source file - tidy for small hierarchies:
+- `permits` may be omitted when all subtypes are in the same source file. **Declare them as nested members** rather than as several top-level types, which keeps one top-level class per file:
 
   ```java
   public sealed interface Address {
@@ -69,7 +69,10 @@ Avoid until something concretely demands it:
   }
   ```
 
+  Several top-level records in one file also compiles and also lets `permits` be omitted, but one top-level class per file is close to universal convention and the nested form reads better anyway.
+
 - Every permitted subtype must be `final`, `sealed`, or `non-sealed` - the compiler forces the choice.
+- `sealed` and `non-sealed` have a place in the conventional modifier order, between `final` and `transient`: `public protected private abstract default static final sealed non-sealed transient volatile synchronized native strictfp`. javac accepts any order, so nothing enforces this - a formatter does. See [enforcement.md](enforcement.md).
 - If the hierarchy is recompiled separately and gains a subtype, an old switch throws `MatchException` rather than silently misbehaving.
 
 ## Version notes

@@ -37,6 +37,8 @@ Adopt them only for:
 - Prefer qualified exports (`exports x to y`) over unqualified.
 - Use `opens` for the specific packages a framework reflects over. Never `open module`.
 - Run CI on the module path - it is the only configuration where the declarations take effect.
+- Group the directives in a conventional order, one blank line between blocks: **`requires`, `exports`, `opens`, `uses`, `provides`**. A `module-info.java` is read far more often than it is written, and a consistent order is what makes a diff to it legible. Modifiers on a `requires` go `transitive static`, in that order.
+- A `module-info.java` has no package declaration, and the module declaration takes the place of the class declaration. Annotations on it go one per line after the doc comment.
 
 ## Version notes
 

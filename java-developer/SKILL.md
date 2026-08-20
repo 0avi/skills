@@ -1,6 +1,6 @@
 ---
 name: java-developer
-description: Generates modern Java code and provides architectural guidance for Java 8 through 25. Trigger when writing or modernising Java, or for best practices on immutability, records, sealed types, pattern matching, switch expressions, Optional vs null, var, text blocks, instance main methods, unnamed variables, module imports, Markdown Javadoc, JPMS modules, bean generation, data-oriented programming, or version migration.
+description: Generates modern Java code and provides architectural guidance for Java 8 through 25. Trigger when writing or modernising Java, or for best practices on immutability, records, sealed types, pattern matching, switch expressions, Optional vs null, JSpecify nullness annotations, var, text blocks, instance main methods, unnamed variables, module imports, Javadoc and Markdown doc comments, exceptions and resource management, JPMS modules, bean generation, data-oriented programming, static analysis and formatting with javac lint, Error Prone, NullAway and google-java-format, Google Java Style, or version migration.
 license: MIT
 metadata:
   author: Avinay Basnet
@@ -18,6 +18,8 @@ Covers the language changes from Java 8 to Java 25.
 3. **A new feature is not automatically a best practice.** Some post-Java-8 features should be avoided in application code - JPMS modules, module import declarations, label-form switches. Each reference states a verdict; follow it rather than hedging.
 
 4. **After generating code, compile it and run the tests** with the project's build tool (`mvn -q verify`, `./gradlew build`). Do not skip this - patterns, sealed exhaustiveness and record component nullability fail at compile time in subtle ways.
+
+5. **Prefer a tool to a rule.** Before writing prose about a defect, check whether `javac -Xlint`, Error Prone or a formatter already catches it - three of this skill's headline rules have an on-by-default check with a suggested fix. See [enforcement.md](references/enforcement.md). Note that javac's default lint is nearly silent, so `-Xlint:all -Werror` is a precondition for most of it.
 
 Every reference carries a **`## Version notes`** section stating what differs across Java 8 to 25, and a **`## Gotchas`** list of the specific mistakes agents make in that area. Read the gotchas even when skimming. Every version floor in those sections was established by compiling the idiom at each release with `javac --release`, not from documentation; the consolidated table is in [java-versions.md](references/java-versions.md).
 
@@ -42,7 +44,10 @@ Treat immutability as the first design decision, not a later refinement. Consult
 
 ## Optional and Null
 
+These are two halves of one policy: `Optional` states absence on a return type, annotations state it everywhere `Optional` must not go. Read both.
+
 - **Optional and Null**: Why `Optional` belongs on public return types but not on parameters or fields, why `isPresent()` / `isEmpty()` are a code smell, using the `Optional` API as fluently as the Stream API, the `in(Optional)` loop idiom, and why future null-restricted types (`String?` / `String!`) will not replace `Optional`. Read [optional-and-null.md](references/optional-and-null.md)
+- **Nullness Annotations**: JSpecify `@Nullable` / `@NonNull` / `@NullMarked` / `@NullUnmarked`, why type-use placement changes the meaning (`@Nullable String[]` versus `String @Nullable []`), that javac never reads these so nothing is checked until NullAway runs, NullAway's JDK requirements, and where Spring Framework 7 sits. Read [nullness.md](references/nullness.md)
 
 ## Records, Beans and Sealed Types
 
@@ -67,11 +72,16 @@ Read these before working with `instanceof` or a `switch` over types. Treat a pa
 
 - **var**: Why local variable type inference should be adopted wholesale rather than sparingly, the parallel with lambda parameter inference, naming variables for the data rather than the type, and the `Opt` suffix convention for `Optional` locals. Read [var.md](references/var.md)
 
+## Exceptions and Resources
+
+- **Exceptions and Resources**: Never swallowing an exception, always attaching the cause, restoring the interrupt flag, which of `NullPointerException` / `IllegalArgumentException` / `IllegalStateException` to throw, try-with-resources over try/finally and why `finally` loses the real exception, `finalize()` being deprecated for removal and `Cleaner` as its backstop, and modelling expected failure as a sealed type instead. Read [exceptions-and-resources.md](references/exceptions-and-resources.md)
+
 ## Smaller Language Features
 
 The reference carries a per-feature verdict table - adopt, adopt for scripts only, or avoid. Follow it rather than adopting on novelty.
 
-- **Smaller Features**: Text blocks (and the SQL injection trap they invite), unnamed variables `_`, Markdown doc comments, instance `main` methods and compact source files, and module import declarations (avoid). Read [smaller-features.md](references/smaller-features.md)
+- **Smaller Features**: Text blocks (and the SQL injection trap they invite), unnamed variables `_`, instance `main` methods and compact source files, and module import declarations (avoid). Read [smaller-features.md](references/smaller-features.md)
+- **Javadoc**: Where Javadoc is required, the summary fragment rule, `{@return}` for accessors, `{@snippet}` in place of `<pre>{@code}`, Markdown doc comments `///`, documenting record components with `@param`, and the rule that all three tags are gated by the **javadoc tool version rather than `--release`**. Read [javadoc.md](references/javadoc.md)
 
 ## Modules (JPMS)
 
@@ -85,6 +95,11 @@ The reference carries a per-feature verdict table - adopt, adopt for scripts onl
 
 - **Modern APIs**: Stream gatherers, virtual threads, and the Foreign Function & Memory API - when each is genuinely worth reaching for. Read [modern-apis.md](references/modern-apis.md)
 
+## Enforcement and Style
+
+- **Enforcement**: Which tool actually checks each rule in this skill. `javac -Xlint` is nearly silent by default and the useful keys are all off; Error Prone's `StatementSwitchToExpressionSwitch`, `PatternMatchingInstanceof` and `MissingOverride` mechanise three of this skill's rules; a formatter retires every layout question; and an honest list of what nothing enforces. Read [enforcement.md](references/enforcement.md)
+- **Google Style Deltas**: The [Google Java Style Guide](https://google.github.io/styleguide/javaguide.html) is the baseline for this skill's style rules. This file records the five places the skill departs from it and why, the three rules routinely misquoted as conflicts, and a measured note on how little the guide says about anything else in this skill. Read [google-style-deltas.md](references/google-style-deltas.md)
+
 ## Checklist
 
-- **Best Practices Checklist**: All 22 practices in one scannable list, plus the three top tips. Use this for review passes over existing code. Read [checklist.md](references/checklist.md)
+- **Best Practices Checklist**: All 32 practices in one scannable list, plus the three top tips and which rules are gated by the JDK or tool version rather than by `release`. Use this for review passes over existing code. Read [checklist.md](references/checklist.md)

@@ -48,6 +48,34 @@ public List<String> holdings() { return holdings; }
 
 Use `copyOf`, not `Collections.unmodifiableList` - the latter wraps a live collection rather than copying it. See [immutable-collections.md](immutable-collections.md).
 
+## The naming test for a constant
+
+`UPPER_SNAKE_CASE` is reserved for genuine constants, and the definition is stricter than `static final`. **A constant is `static final` *and* deeply immutable, with no method that has a detectable side effect.** Intending never to mutate it is not enough.
+
+```java
+// ✅ constants
+static final int RETENTION_YEARS = 6;
+static final List<String> FILING_STATES = List.of("DRAFT", "SUBMITTED");
+
+// ❌ static final, but not constants - so not UPPER_SNAKE_CASE
+static final Set<String> mutableSeenReferences = new HashSet<>();
+static final String[] nonEmptyArray = {"these", "can", "change"};
+static final Logger logger = LoggerFactory.getLogger(Filing.class);
+```
+
+This is a useful test rather than a cosmetic rule: **if a field cannot be named in `UPPER_SNAKE_CASE`, it failed the immutability rules above**, and the name is where that shows up in review. Note that the mutable set gets the `mutableXxx` name for exactly the same reason. A `static final` array can never be a constant, since arrays cannot be made immutable.
+
+Local variables are never constants, even when `final` and immutable.
+
+## Let the compiler check `final`
+
+Two lint keys back the rules on this page, and neither is on by default:
+
+- **`-Xlint:this-escape`** warns when a constructor calls a method an external subclass could override, which runs before the subclass has initialised. Making the class `final` is what silences it, so the warning is the compiler arguing this page's first rule.
+- **`-Xlint:identity`** warns where a value-based class is used as though it had identity, including synchronising on one.
+
+See [enforcement.md](enforcement.md).
+
 ## Prefer composition over inheritance
 
 Immutable classes must not form inheritance hierarchies - a subclass can add mutable state, and `equals` becomes unfixable.
@@ -84,6 +112,8 @@ The principle is version-agnostic and applies from Java 8. The tools this page r
 | `var` in the worked example | 10 |
 | Records as the immutable carrier | 16 |
 | Sealed interface for a constrained choice | 17 |
+| `-Xlint:this-escape` | 21. Present on 21, measured |
+| `-Xlint:identity` | Absent on 21, present on 25. `synchronization` is its deprecated alias there |
 
 **Java 8 is where this page matters most and has the fewest tools.** There, use `Collections.unmodifiableList(new ArrayList<>(input))` for the defensive copy, keep the `final` discipline, and model constrained choices with a documented interface. That work is exactly what makes a later move to records and sealed types mechanical, as [java-versions.md](java-versions.md) argues.
 
@@ -95,6 +125,8 @@ The principle is version-agnostic and applies from Java 8. The tools this page r
 - Agent defensively copies on the way in but hands the internal collection straight out of the accessor
 - Agent copies a collection of mutable elements - the collection is frozen, the elements are not. Immutability has to go all the way down
 - Agent names a mutable accumulator `total` rather than `mutableTotal` - the naming rule is what makes the mutation visible in review
+- Agent names a `static final` mutable collection or array in `UPPER_SNAKE_CASE` - `static final` is not the test. Deeply immutable is, and a `static final` array can never pass it
+- Agent styles a `final` local as a constant - locals are never constants
 - Agent introduces an immutable superclass and subclasses it - a subclass can add mutable state and `equals` becomes unfixable. Compose, or seal
 - Agent keeps a `Date`, `Calendar` or `StringBuilder` field in an otherwise immutable type
 - Agent makes an entity immutable because this page says to - long-lived accumulators and framework-owned entities are the documented exception. Keep them few, small and private
