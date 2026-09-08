@@ -76,6 +76,15 @@ syft dir:. -o cyclonedx-json@1.7=sbom.cdx.json -o spdx-json@2.3=sbom.spdx.json
 
 Prefer the build plugin for the application's own dependencies and `syft` for the image. They disagree, and the disagreement is informative: anything in the image SBOM but not the build SBOM came from the base image and is still yours to patch.
 
+**Measured with syft 1.51.1**, on a trivial Java application and the runtime image built from it:
+
+| Scan target | Components |
+| ----------- | ---------- |
+| Source tree | **1** |
+| The runtime image built from it | **1,263** |
+
+**1,262 components arrived with the base image.** They are not in your `pom.xml`, no build plugin will report them, and they are entirely your responsibility to patch. That ratio is the argument for generating both documents, and it is why a source-only SBOM gives false comfort - see the corresponding vulnerability figures in [scanning.md](scanning.md).
+
 ## Where the document has to go
 
 An SBOM in a build log is worthless. It has to be retrievable later, keyed to the artifact:

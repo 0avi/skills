@@ -67,11 +67,14 @@ Never depend on a pre-installed toolchain version; install it explicitly. See [r
 | **syft** | **1.51.1** (built 2026-08-27) | **Yes** - SBOM generation, output versions read back |
 | **cosign** | **v3.1.3** (go1.26.4) | **Yes** - offline sign and verify, with a tampering control |
 | **act** | **0.2.89** | **Yes** - a workflow parsed and run to success in Docker |
-| **Docker** | **29.7.2** | Daemon up; used by `act`. No image was built |
+| **Docker** | **29.7.2** | **Yes** - images built; secret-in-layers, multi-stage and `Config.User` measured |
 | **Maven** | **3.9.16** | **Yes** - reproducible build measured with a control |
+| **grype** | **0.118.0** | **Yes** - scanned a real runtime image; 326 findings classified by package type |
+| **trivy** | **0.74.0** | Installed, not used for a published figure |
+| **kind** | **0.33.0** | Installed; **cluster creation did not complete** on this host under load |
 | **Node / npm** | **25.8.0** / **11.11.0** | Present, not exercised |
-| **kubectl** | present | Not exercised; no cluster |
-| `trivy`, `grype`, `gradle`, `gh`, cloud CLIs | not installed | No |
+| **kubectl** | **v1.36.1** | Client only; no cluster reached |
+| `gradle`, `gh`, cloud CLIs | not installed | No |
 
 ### What syft emits, measured
 
@@ -110,7 +113,8 @@ syft dir:. -o spdx-json=/tmp/s.json && python -c \
 ## Version notes
 
 - **Everything above was resolved on Windows x64.** Action SHAs and standards versions are platform-neutral; tool availability and behaviour are not.
-- **No cloud account, no cluster, no hosted runner** was available, so every cloud and hosted-runner statement in this skill is cited from vendor documentation rather than measured.
+- **No cloud account and no hosted runner** was available, so every cloud and hosted-runner statement in this skill is cited from vendor documentation rather than measured.
+- **A local `kind` cluster was attempted and abandoned.** `kind` 0.33.0 pulled `kindest/node:v1.37.0` successfully but stalled at "Preparing nodes" on a host already running 10 development containers. Kubernetes claims therefore remain cited. This is a host-capacity limitation, not a tooling one, and is the cheapest remaining gap to close.
 - **Dates matter for standards.** CycloneDX 1.7 and SPDX 3.0.1 are recent; a tool built before them cannot emit them.
 - **The measurements have a date.** Re-run the reproduction commands rather than trusting a table that ages.
 

@@ -31,9 +31,9 @@ Every reference carries a **`## Version notes`** section stating what differs ac
 
 ## What was verified, and what was not
 
-**Verified by running it** on this machine: SBOM generation and the exact specification versions emitted, reproducible Maven builds with a control, `cosign` signing and verification with a tampering control, action tag-to-SHA resolution through the GitHub API, and workflow execution locally. Tool versions: syft 1.51.1, cosign v3.1.3, act 0.2.89, Maven 3.9.16, Node 25.8.0, Docker 29.7.2.
+**Verified by running it** on this machine, with a control wherever a control was meaningful: SBOM generation and the exact specification versions emitted, reproducible Maven builds, `cosign` signing with a tampering control, **a secret surviving in an image layer after `rm` (with a `--mount=type=secret` control)**, multi-stage image contents and size, **a real vulnerability scan classified by package origin**, action tag-to-SHA resolution, and local workflow execution. Tools: syft 1.51.1, cosign v3.1.3, grype 0.118.0, trivy 0.74.0, act 0.2.89, Maven 3.9.16, Docker 29.7.2, kind 0.33.0, kubectl v1.36.1.
 
-**Cited, not measured:** anything requiring a cloud account or a hosted runner. That means OIDC federation end-to-end, cache hit rates at scale, hosted-runner behaviour under concurrency, and every cloud deployment target. Those are sourced to the vendor's own documentation and marked at the point of use.
+**Cited, not measured:** anything requiring a cloud account, a hosted runner or a cluster. That means OIDC federation end-to-end, cache hit rates at scale, hosted-runner behaviour, registry interaction, multi-architecture manifest lists, and every cloud deployment target including Kubernetes. Those are sourced to the vendor's own documentation and marked at the point of use. [book-deltas.md](references/book-deltas.md) lists each gap and what would close it.
 
 **The four key delivery metrics are research, not measurement here.** They come from the DORA programme reported in *Accelerate*; this skill does not re-derive them. See [dora-and-measurement.md](references/dora-and-measurement.md).
 

@@ -71,6 +71,18 @@ trivy image --severity HIGH,CRITICAL "$REG/app@$digest"
 grype "$REG/app@$digest"
 ```
 
+**Measured with grype 0.118.0** on the runtime image built for this skill - a trivial Java application on `eclipse-temurin:25-jre`, with no third-party application dependencies at all:
+
+| | Count |
+| --- | ----- |
+| Total findings | **326** |
+| From `deb` packages, i.e. the base image OS | **321** |
+| From `go-module` packages inside the base image | 5 |
+| From the application's own code or dependencies | **0** |
+| By severity | 4 High, 281 Medium, 41 Low |
+
+**98.5% of findings came from the base image**, on an application with essentially no dependencies of its own. That is the quantified case for two things in this file: scan the image rather than only the source, and route the findings to whoever can actually fix them. Handing an application team 321 Debian package CVEs they cannot patch is how scanning gets switched off.
+
 Route findings by **who can fix them**:
 
 | Finding location | Owner | Action |
@@ -104,11 +116,12 @@ Tests the running application: authentication, headers, TLS, error handling, and
 
 - **Vulnerability databases update constantly**, so the same image scanned twice a week apart legitimately yields different results. That is not a bug, and it means a scan result has a date.
 - **Prefer SARIF upload** so findings appear on the pull request rather than in a log.
-- **Not verified here:** no scanner was executed for this skill. `syft` and `cosign` were installed and exercised; `trivy` and `grype` were not. Cited from their documentation.
+- **Measured here:** `grype` **0.118.0** was run against the runtime image built for this skill, producing the 326-finding breakdown above. `trivy` **0.74.0** is installed but was not used for a published figure.
+- **Not verified here:** SAST, DAST, IaC scanning and SARIF upload. Those need a hosted platform or a deployed application, and are cited from vendor documentation.
 
 ## Gotchas
 
-- Agent scans the source tree and deploys an image - the image contains base-image packages the source scan never saw
+- Agent scans the source tree and deploys an image - **measured: 1 component in the source SBOM against 1,263 in the image**, and 321 of 326 vulnerability findings came from base-image OS packages
 - Agent scans by tag and deploys by tag - the two can be different images; scan the digest
 - Agent blocks on all high-severity findings regardless of fixability - pipeline red within a week, gate disabled shortly after
 - Agent adopts SAST with no baseline on a legacy codebase - thousands of findings, none triaged, tool switched off
