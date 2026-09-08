@@ -109,6 +109,23 @@ public void pay(OrderId id) {
 
 This does introduce a window where the charge succeeded and the local write has not happened yet. That is a real distributed-systems problem and the answer is idempotency and reconciliation - not a longer transaction, which does not fix it either.
 
+### The transaction is bound to the thread, so it does not cross a fork
+
+Spring holds the `Connection`, the `EntityManager` and the synchronizations in `TransactionSynchronizationManager`, which is a `ThreadLocal`. Anything that moves work to another thread therefore leaves the transaction behind - an `@Async` method, a `parallelStream()`, and a `StructuredTaskScope.fork(...)` alike. The subtask does not join your transaction and does not fail with it: it silently takes its own connection from the pool and commits on its own.
+
+```java
+@Transactional                                       // ❌ neither fork is in this transaction
+public void reprice(OrderId id) {
+    try (var scope = StructuredTaskScope.open()) {
+        scope.fork(() -> orderRepository.save(...));  // its own connection, its own commit
+        scope.fork(() -> auditRepository.save(...));  // and this one commits even if the first fails
+        scope.join();
+    }
+}
+```
+
+Fan out **before** the transaction opens, over work that is not database work, and write once you have joined. See [async-and-scheduling.md](async-and-scheduling.md).
+
 ## Optimistic locking
 
 `@Version` on the entity ([spring-data-jpa.md](spring-data-jpa.md)) makes a concurrent update fail rather than silently overwrite:
@@ -204,7 +221,8 @@ Everything here is identical. The one difference is retry: core `@Retryable` and
 - Agent stacks `@Retryable` and `@Transactional` on one method - every retry runs in the doomed transaction
 - Agent makes the saga orchestrator `@Transactional` - it spans network calls; each step is its own local transaction
 - Agent writes non-idempotent compensating actions - they will run twice
+- Agent forks repository calls inside `@Transactional`, or parallelises them with `parallelStream()` - the transaction is thread-bound, so each one commits separately and a rollback does not reach them
 
 ## Related
 
-- [spring-proxies-and-di.md](spring-proxies-and-di.md) · [spring-data-jpa.md](spring-data-jpa.md) · [resilience.md](resilience.md) · [messaging.md](messaging.md) · [spring-modulith.md](spring-modulith.md) · [error-handling.md](error-handling.md)
+- [spring-proxies-and-di.md](spring-proxies-and-di.md) · [spring-data-jpa.md](spring-data-jpa.md) · [resilience.md](resilience.md) · [messaging.md](messaging.md) · [spring-modulith.md](spring-modulith.md) · [error-handling.md](error-handling.md) · [async-and-scheduling.md](async-and-scheduling.md)

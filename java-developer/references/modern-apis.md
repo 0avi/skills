@@ -4,6 +4,7 @@
 | --- | ------- | -------------- |
 | Stream gatherers | 24 | When a stream needs an intermediate operation the JDK does not have |
 | Virtual threads | 21 | I/O-bound concurrency - usually a framework config change, not new code |
+| Structured concurrency, `ScopedValue` | 25 | Fanning out I/O *inside* one task, and the context that has to survive it. See [structured-concurrency.md](structured-concurrency.md) |
 | Foreign Function & Memory | 22 | Replacing existing JNI or `sun.misc.Unsafe` code |
 
 ---
@@ -53,9 +54,11 @@ Rules:
 
 - **I/O-bound work only.** They give nothing to CPU-bound work - use the common `ForkJoinPool` for that.
 - **Never pool them.** One per task, then let it die. Pooling defeats the design.
-- Prefer `ReentrantLock` over `synchronized` around blocking calls in hot paths (historically this pinned the carrier thread; largely addressed in Java 24, but the guidance still holds).
-- Prefer `ScopedValue` over `ThreadLocal`, which is expensive at this scale.
+- Prefer `ReentrantLock` over `synchronized` around blocking calls in hot paths. Before Java 24 this was not a preference but a ceiling: a virtual thread blocked inside `synchronized` cannot unmount, so concurrency caps at the carrier count. Measured at **13.1 s versus 1.0 s** for the same work on 21 and 25 in [structured-concurrency.md](structured-concurrency.md).
+- Prefer `ScopedValue` over `ThreadLocal`, which is expensive at this scale - **but only on 25**, where it is final. See the version notes below.
 - **Prefer the framework switch.** Most application servers and HTTP clients enable virtual threads with one setting - take that rather than hand-rolling executors. Use explicit executors when fanning out I/O yourself.
+
+They speed up **concurrent tasks** and nothing else. A single request that makes three REST calls one after another is exactly as slow with them as without; that is what structured concurrency is for. Read [structured-concurrency.md](structured-concurrency.md) before fanning out inside a task, and before replacing any `ThreadLocal`.
 
 ---
 
@@ -113,9 +116,11 @@ The table at the top of this page carries each API's release. Verified floors fo
 | The runtime warning when it is **absent** | Measured on 25. Documented as arriving with JDK 24; not measured below 25 |
 | `-Xlint:restricted` | Absent on 21, present on 25. Measured on both |
 | `Stream.gather` with `Gatherers.windowFixed` / `scan` / `mapConcurrent` | 24 |
-| `ScopedValue` | **25** |
+| `synchronized` no longer pinning a blocked virtual thread | **24** |
+| `ScopedValue` | **25** as a final API |
+| `StructuredTaskScope` in its current shape | **25**, and still preview |
 
-`ScopedValue` is the trap: the virtual threads advice above recommends it over `ThreadLocal`, and it is a Java 25 API. On 21 to 24 it is not available as a final API, so keep `ThreadLocal` there and revisit on 25. Gatherers are 24, so on a Java 21 LTS project the whole of that section is unavailable and a loop is the correct answer.
+`ScopedValue` is the trap: the virtual threads advice above recommends it over `ThreadLocal`, and it is a Java 25 API. It does compile on 21 with `--enable-preview`, but with a **different API shape** (`ScopedValue.runWhere(...)` rather than `where(...).run(...)`), so code written against one does not compile on the other. On 21 to 24, keep `ThreadLocal` and revisit on 25. Gatherers are 24, so on a Java 21 LTS project the whole of that section is unavailable and a loop is the correct answer.
 
 ## Gotchas
 
@@ -124,6 +129,7 @@ The table at the top of this page carries each API's release. Verified floors fo
 - Agent pools virtual threads, or sizes a virtual thread executor - one per task, then let it die. Pooling defeats the design
 - Agent moves CPU-bound work onto virtual threads for throughput - they give nothing there; use the common `ForkJoinPool`
 - Agent hand-rolls a virtual thread executor when the framework has a one-line switch - take the switch
+- Agent enables virtual threads and reports a sequential fan-out as fixed - they make concurrent tasks cheap and change nothing inside one task. See [structured-concurrency.md](structured-concurrency.md)
 - Agent rewrites working stream pipelines to use gatherers because they are new - the page says explicitly not to
 - Agent writes a custom `Gatherer` for a one-off transformation - prefer the built-ins; custom gatherers earn their place only when reused
 - Agent allocates in an `Arena` without try-with-resources - the memory's lifetime is the arena's, and a confined arena must be closed on the thread that made it
@@ -135,4 +141,4 @@ The table at the top of this page carries each API's release. Verified floors fo
 
 ## Related
 
-- [java-versions.md](java-versions.md) · [checklist.md](checklist.md)
+- [structured-concurrency.md](structured-concurrency.md) · [java-versions.md](java-versions.md) · [checklist.md](checklist.md)

@@ -78,16 +78,18 @@ This page is the skill's version reference. Every floor below was established by
 | 21 | **Pattern `switch`, `when` guards, `case null`, record patterns.** `MatchException`, `SequencedCollection` (`getFirst` / `getLast` / `reversed`), virtual threads. `-Xlint:this-escape` |
 | 22 | Unnamed variables and patterns (`_`), the Foreign Function & Memory API |
 | 23 | Markdown doc comments (`///`) - a javadoc tool change, so `///` compiles as an ordinary comment on any release and simply produces no documentation below 23 |
-| 24 | Stream gatherers (`Stream.gather`, `Gatherers`) |
-| 25 | `ScopedValue`, `java.lang.IO`, compact source files with instance `main`, module import declarations |
+| 24 | Stream gatherers (`Stream.gather`, `Gatherers`). **`synchronized` stops pinning a blocked virtual thread** (JEP 491) - a runtime change, not a language one |
+| 25 | `ScopedValue`, `java.lang.IO`, compact source files with instance `main`, module import declarations. `StructuredTaskScope` redesigned, still preview |
 
-Four results that surprise people, all measured rather than assumed:
+Five results that surprise people, all measured rather than assumed:
 
 - **The default charset changed at 18, and `release` does not control it.** Charset is a property of the JVM that runs, not of the bytecode level you target, so `maven.compiler.release=17` still gets UTF-8 once the build and the application run on 18 or later. Measured on both JDK 21 and 25: `Charset.defaultCharset()` and `file.encoding` are `UTF-8` while `native.encoding` on the same machine is `Cp1252`. **Crossing 18 therefore changes behaviour in code that read or wrote files without naming a charset**, and it changes it at deployment rather than at compile time, which is the worst place to find out. Name the charset explicitly, and set `project.build.sourceEncoding` regardless of release.
 
 - **`String.formatted()` resolves from 13**, before text blocks themselves. Text blocks need 15, so 15 is the floor for the combined idiom.
 - **`_` as a variable name compiles on Java 8**, where it is an ordinary identifier. It is rejected from 9 to 21, and only means "unnamed variable" from 22. See [smaller-features.md](smaller-features.md).
-- **`ScopedValue` is 25**, not 21, so the standard virtual-threads advice to prefer it over `ThreadLocal` does not apply on a Java 21 LTS project. See [modern-apis.md](modern-apis.md).
+- **`ScopedValue` is 25**, not 21, so the standard virtual-threads advice to prefer it over `ThreadLocal` does not apply on a Java 21 LTS project. It does exist on 21 behind `--enable-preview`, but with a **different API shape** - static `runWhere` / `callWhere` there, `where(...).run(...)` on 25 - so the two do not compile against each other. See [structured-concurrency.md](structured-concurrency.md).
+
+- **One of the biggest virtual-thread changes is not gated by `release` at all.** `synchronized` pinning was fixed in the JDK 24 *runtime*, so the same bytecode targeting `release=21` goes from 13.1 s to 1.0 s purely by running on a newer JVM. Like the charset change at 18, it takes effect at deployment rather than at compile time - the difference being that this one is an improvement. Measured on 21.0.12 and 25.0.4.1 in [structured-concurrency.md](structured-concurrency.md).
 
 ## Gotchas
 

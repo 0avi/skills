@@ -1,6 +1,6 @@
 ---
 name: java-developer
-description: Generates modern Java code and provides architectural guidance for Java 8 through 25. Trigger when writing or modernising Java, or for best practices on immutability, records, sealed types, pattern matching, switch expressions, Optional vs null, JSpecify nullness annotations, var, text blocks, instance main methods, unnamed variables, module imports, Javadoc and Markdown doc comments, exceptions and resource management, JPMS modules, bean generation, data-oriented programming, static analysis and formatting with javac lint, Error Prone, NullAway and google-java-format, Google Java Style, or version migration.
+description: Generates modern Java code and provides architectural guidance for Java 8 through 25. Trigger when writing or modernising Java, or for best practices on immutability, records, sealed types, pattern matching, switch expressions, Optional vs null, JSpecify nullness annotations, var, text blocks, instance main methods, unnamed variables, module imports, Javadoc and Markdown doc comments, exceptions and resource management, JPMS modules, bean generation, data-oriented programming, virtual threads and carrier pinning, structured concurrency with StructuredTaskScope and Joiner, ScopedValue versus ThreadLocal, static analysis and formatting with javac lint, Error Prone, NullAway and google-java-format, Google Java Style, or version migration.
 license: MIT
 metadata:
   author: Avinay Basnet
@@ -94,6 +94,7 @@ The reference carries a per-feature verdict table - adopt, adopt for scripts onl
 ## Beyond the Language
 
 - **Modern APIs**: Stream gatherers, virtual threads, and the Foreign Function & Memory API - when each is genuinely worth reaching for. Read [modern-apis.md](references/modern-apis.md)
+- **Structured Concurrency and Scoped Values**: What virtual threads do *not* fix, the measured cost of `synchronized` pinning before Java 24, the `StructuredTaskScope` API as Java 25 redesigned it (and why every pre-25 snippet has to be rewritten), writing a `Joiner`, and `ScopedValue` as the only context mechanism that survives a `fork()`. Read [structured-concurrency.md](references/structured-concurrency.md)
 
 ## Enforcement and Style
 
@@ -102,4 +103,4 @@ The reference carries a per-feature verdict table - adopt, adopt for scripts onl
 
 ## Checklist
 
-- **Best Practices Checklist**: All 32 practices in one scannable list, plus the three top tips and which rules are gated by the JDK or tool version rather than by `release`. Use this for review passes over existing code. Read [checklist.md](references/checklist.md)
+- **Best Practices Checklist**: All 35 practices in one scannable list, plus the three top tips and which rules are gated by the JDK or tool version rather than by `release`. Use this for review passes over existing code. Read [checklist.md](references/checklist.md)

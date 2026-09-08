@@ -94,6 +94,14 @@ Use this for a review pass over existing code. Each rule links to the reference 
 | 31 | Adopt a formatter (google-java-format via Spotless) and reformat in **one commit of its own**. That retires every layout question. | [enforcement.md](enforcement.md) |
 | 32 | Run Error Prone. `StatementSwitchToExpressionSwitch`, `PatternMatchingInstanceof` and `MissingOverride` mechanise rules 17, 18 and the one javac cannot check. | [enforcement.md](enforcement.md) |
 
+## Concurrency
+
+| # | Rule | Reference |
+| - | ---- | --------- |
+| 33 | One virtual thread per task, never pooled, and only for I/O. On 21 to 23, no blocking call inside `synchronized` - use `ReentrantLock`. | [structured-concurrency.md](structured-concurrency.md) |
+| 34 | Fan out inside a task with `StructuredTaskScope`, and choose the failure policy explicitly - bare `open()` is fail-fast. Collect in a `Joiner` using concurrent collections. | [structured-concurrency.md](structured-concurrency.md) |
+| 35 | `ScopedValue`, not `ThreadLocal`, for anything that must survive a `fork()`. Bind with `where(...).run(...)`; there is no `set()`. | [structured-concurrency.md](structured-concurrency.md) |
+
 ## Carried over from Java 8
 
 Use `java.time`. Never `Date` or `Calendar`.
@@ -112,7 +120,7 @@ Records express **AND**, sealed types **OR**, patterns **operate**, enums **vali
 
 ## Version notes
 
-Rules 1, 2 and 30 to 32 apply on every release. **Most of the rest are gated**, and applying one below its floor produces code that does not compile:
+Rules 1, 2 and 30 to 32 apply on every release. **Most of the rest are gated**, and applying one below its floor produces code that does not compile. Rule 33's `synchronized` half is gated by the **JDK that runs**, not the one that compiles - the pinning fix is a Java 24 runtime change:
 
 | Rules | Need at least |
 | ----- | ------------- |
@@ -128,6 +136,8 @@ Rules 1, 2 and 30 to 32 apply on every release. **Most of the rest are gated**, 
 | 19 (record patterns) | 21 |
 | 5 (`_`) | 22 |
 | 3, 6 (module import declarations) | 25 |
+| 33 (virtual threads) | 21 |
+| 34 (`StructuredTaskScope` in its current shape), 35 (`ScopedValue`) | 25, and 34 needs `--enable-preview` |
 
 Three rules are gated by something other than `--release`, which is what makes them easy to get wrong:
 
@@ -136,6 +146,7 @@ Three rules are gated by something other than `--release`, which is what makes t
 | 24 (NullAway checking anything) | The **JDK running the build**: 22+, or 21.0.8+ / 17.0.19+ on an OpenJDK build with `-XDaddTypeAnnotationsToSymbol=true` |
 | 7, 28, 29 (`///`, `{@return}`, `{@snippet}`) | The **javadoc tool version** - 23, 16 and 18 respectively. `--release` does not gate them |
 | 30 (which `-Xlint` keys exist) | The **javac version**. `restricted` and `identity` are absent on 21, present on 25 |
+| 33 (`synchronized` pinning a virtual thread) | The **JDK running the application**: fixed in 24, so the same `release=21` bytecode behaves differently on 21 and 25 |
 
 The full verified table, including the API-level floors that catch people out, is in [java-versions.md](java-versions.md). Establish the project's release before running a review pass with this list, or half the findings will be unactionable.
 
@@ -146,10 +157,11 @@ The full verified table, including the API-level floors that catch people out, i
 - Agent treats the list as a generation checklist - it is written for a review pass over existing code
 - Agent flags a mutable accumulator inside one method - confined mutability is explicitly allowed, and the `mutableXxx` naming is the tell that it was deliberate
 - Agent flags Lombok in a Lombok codebase and rewrites files piecemeal - raise it, match the surrounding code, and keep removal as its own change
-- Agent counts 32 rules as 32 separate commits - several are one design decision, and the records-versus-beans choice (20, 21) is a system-level one
+- Agent counts 35 rules as 35 separate commits - several are one design decision, and the records-versus-beans choice (20, 21) is a system-level one
+- Agent files rules 34 and 35 against a Java 21 project - both are 25, and 34 is preview even there
 - Agent reports a nullness or Javadoc finding without checking what actually gates it - rules 7, 24, 28, 29 and 30 are gated by the JDK or tool version, not by `release`
 - Agent files rules 30 to 32 as code findings - they are build configuration, and each is one change for the whole repository
 
 ## Related
 
-- [java-versions.md](java-versions.md) · [data-oriented-programming.md](data-oriented-programming.md) · [records.md](records.md) · [beans-vs-records.md](beans-vs-records.md) · [optional-and-null.md](optional-and-null.md) · [nullness.md](nullness.md) · [switch.md](switch.md) · [exceptions-and-resources.md](exceptions-and-resources.md) · [javadoc.md](javadoc.md) · [enforcement.md](enforcement.md) · [google-style-deltas.md](google-style-deltas.md)
+- [java-versions.md](java-versions.md) · [data-oriented-programming.md](data-oriented-programming.md) · [records.md](records.md) · [beans-vs-records.md](beans-vs-records.md) · [optional-and-null.md](optional-and-null.md) · [nullness.md](nullness.md) · [switch.md](switch.md) · [exceptions-and-resources.md](exceptions-and-resources.md) · [structured-concurrency.md](structured-concurrency.md) · [javadoc.md](javadoc.md) · [enforcement.md](enforcement.md) · [google-style-deltas.md](google-style-deltas.md)

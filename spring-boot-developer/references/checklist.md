@@ -101,34 +101,35 @@ For the language itself - records, sealed types, `Optional`, `var`, patterns - u
 | 51 | Database in **readiness**, never liveness. | [observability.md](observability.md) |
 | 52 | Never tag a metric with a user id, entity id or exception message. | [observability.md](observability.md) |
 | 53 | Log the exception object, not `ex.getMessage()`. Never log secrets or personal data. | [observability.md](observability.md) |
-| 54 | Enable virtual threads on Java 21+, then size the connection pool - it is now the bottleneck. | [async-and-scheduling.md](async-and-scheduling.md) |
-| 55 | A `@Scheduled` job runs once per replica. Make it idempotent or claim the work. | [async-and-scheduling.md](async-and-scheduling.md) |
-| 56 | `MaxRAMPercentage`, not `-Xmx`. Run as non-root. Graceful shutdown shorter than the orchestrator's grace period. | [containerization-and-native.md](containerization-and-native.md) |
+| 54 | Enable virtual threads on Java 21+ - they are off by default - then size the connection pool, which is now the bottleneck. | [async-and-scheduling.md](async-and-scheduling.md) |
+| 55 | Virtual threads do nothing for a sequential fan-out inside one request. `StructuredTaskScope` is that fix - preview on Java 25, in a service and never in a controller, never around a repository call inside `@Transactional`. | [async-and-scheduling.md](async-and-scheduling.md) |
+| 56 | A `@Scheduled` job runs once per replica. Make it idempotent or claim the work. | [async-and-scheduling.md](async-and-scheduling.md) |
+| 57 | `MaxRAMPercentage`, not `-Xmx`. Run as non-root. Graceful shutdown shorter than the orchestrator's grace period. | [containerization-and-native.md](containerization-and-native.md) |
 
 ## Testing
 
 | # | Rule | Reference |
 | - | ---- | --------- |
-| 57 | Layer the levels - unit, sliced, smoke, one end-to-end. Green unit tests do not mean a working application. | [testing-strategy.md](testing-strategy.md) |
-| 58 | Guard the context cache: shared `application-test.yml`, mocks in a base class, avoid `@DirtiesContext`. | [testing-strategy.md](testing-strategy.md) |
-| 59 | **Testcontainers against the real database, never H2** - H2 also means your migrations never run. | [testing-slices-persistence.md](testing-slices-persistence.md) |
-| 60 | One container for the suite. `static` or a shared `@TestConfiguration`. Pin the image tag. | [testcontainers.md](testcontainers.md) |
-| 61 | `@ServiceConnection` where a factory exists; `DynamicPropertyRegistrar` only for values that do not exist at authoring time. | [testcontainers.md](testcontainers.md) |
-| 62 | `@WebMvcTest` needs `@Import(SecurityConfig.class)` - otherwise it tests Boot's defaults. | [testing-slices-web.md](testing-slices-web.md) |
-| 63 | Assert the negative security cases: 401 and 403. | [testing-slices-web.md](testing-slices-web.md) |
-| 64 | Awaitility for anything asynchronous. Never `Thread.sleep`. | [testing-integration.md](testing-integration.md) |
-| 65 | Inject a `Clock`; never call `Instant.now()` in code you need to test. | [testing-unit.md](testing-unit.md) |
-| 66 | `@MockitoBean`, not `@MockBean` - removed in Boot 4. | [boot-versions.md](boot-versions.md) |
+| 58 | Layer the levels - unit, sliced, smoke, one end-to-end. Green unit tests do not mean a working application. | [testing-strategy.md](testing-strategy.md) |
+| 59 | Guard the context cache: shared `application-test.yml`, mocks in a base class, avoid `@DirtiesContext`. | [testing-strategy.md](testing-strategy.md) |
+| 60 | **Testcontainers against the real database, never H2** - H2 also means your migrations never run. | [testing-slices-persistence.md](testing-slices-persistence.md) |
+| 61 | One container for the suite. `static` or a shared `@TestConfiguration`. Pin the image tag. | [testcontainers.md](testcontainers.md) |
+| 62 | `@ServiceConnection` where a factory exists; `DynamicPropertyRegistrar` only for values that do not exist at authoring time. | [testcontainers.md](testcontainers.md) |
+| 63 | `@WebMvcTest` needs `@Import(SecurityConfig.class)` - otherwise it tests Boot's defaults. | [testing-slices-web.md](testing-slices-web.md) |
+| 64 | Assert the negative security cases: 401 and 403. | [testing-slices-web.md](testing-slices-web.md) |
+| 65 | Awaitility for anything asynchronous. Never `Thread.sleep`. | [testing-integration.md](testing-integration.md) |
+| 66 | Inject a `Clock`; never call `Instant.now()` in code you need to test. | [testing-unit.md](testing-unit.md) |
+| 67 | `@MockitoBean`, not `@MockBean` - removed in Boot 4. | [boot-versions.md](boot-versions.md) |
 
 ## AI
 
 | # | Rule | Reference |
 | - | ---- | --------- |
-| 67 | Pair the versions: Spring AI 2.0 with Boot 4, 1.x with Boot 3.5. | [spring-ai.md](spring-ai.md) |
-| 68 | Scope the conversation id per user or session - a shared one leaks history between users. | [spring-ai.md](spring-ai.md) |
-| 69 | Never concatenate user input into a prompt. Never execute or render model output unescaped. | [spring-ai.md](spring-ai.md) |
-| 70 | `log-prompt: false` in production, and never tag a metric with prompt content. | [ai-observability.md](ai-observability.md) |
-| 71 | Cap `max-tokens`, track token usage per operation, and alert on spend. | [ai-observability.md](ai-observability.md) |
+| 68 | Pair the versions: Spring AI 2.0 with Boot 4, 1.x with Boot 3.5. | [spring-ai.md](spring-ai.md) |
+| 69 | Scope the conversation id per user or session - a shared one leaks history between users. | [spring-ai.md](spring-ai.md) |
+| 70 | Never concatenate user input into a prompt. Never execute or render model output unescaped. | [spring-ai.md](spring-ai.md) |
+| 71 | `log-prompt: false` in production, and never tag a metric with prompt content. | [ai-observability.md](ai-observability.md) |
+| 72 | Cap `max-tokens`, track token usage per operation, and alert on spend. | [ai-observability.md](ai-observability.md) |
 
 ---
 

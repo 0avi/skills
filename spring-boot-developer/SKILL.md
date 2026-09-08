@@ -1,6 +1,6 @@
 ---
 name: spring-boot-developer
-description: Generates modern Spring Boot code and provides architectural guidance for Spring Boot 4.x and 3.5.x. Trigger when writing or modernising Spring Boot applications, or for best practices on package structure, Spring Modulith, REST controllers, RFC 9457 error handling, validation, Jackson 3, Spring Data JPA, transactions, Flyway, caching, Spring Security, JWT, OAuth2, HTTP interface clients, resilience, messaging, configuration, Actuator observability, async and virtual threads, Spring Batch, Spring AI, MCP servers, Testcontainers testing, or Boot 3 to Boot 4 migration.
+description: Generates modern Spring Boot code and provides architectural guidance for Spring Boot 4.x and 3.5.x. Trigger when writing or modernising Spring Boot applications, or for best practices on package structure, Spring Modulith, REST controllers, RFC 9457 error handling, validation, Jackson 3, Spring Data JPA, transactions, Flyway, caching, Spring Security, JWT, OAuth2, HTTP interface clients, resilience, messaging, configuration, Actuator observability, async, virtual threads and structured concurrency, Spring Batch, Spring AI, MCP servers, Testcontainers testing, or Boot 3 to Boot 4 migration.
 license: MIT
 metadata:
   author: Avinay Basnet
@@ -17,7 +17,7 @@ Covers Spring Boot 4.x (the baseline) and 3.5.x (the last 3.x line, and the real
 
 3. **Never generate Lombok.** No `@Data`, `@Getter`, `@RequiredArgsConstructor`, `@Builder` or `@Slf4j` - write the constructor, the accessors and the logger. [java-in-spring.md](references/java-in-spring.md) carries the replacement for each annotation. If the project already uses Lombok, match the surrounding code and raise it rather than silently mixing styles.
 
-4. **This is a Spring MVC skill.** Servlet stack, with virtual threads for concurrency on Java 21+. Do not improvise WebFlux guidance - where Boot exposes parallel configuration for both, the reference names the `spring.webflux.*` key and stops there. A genuinely reactive requirement is out of scope; say so rather than guessing.
+4. **This is a Spring MVC skill.** Servlet stack, with virtual threads for concurrency across requests on Java 21+ and structured concurrency for fan-out within one. Do not improvise WebFlux guidance - where Boot exposes parallel configuration for both, the reference names the `spring.webflux.*` key and stops there. A genuinely reactive requirement is out of scope; say so rather than guessing.
 
 5. **Errors are RFC 9457 `ProblemDetail`.** No success/error envelope wrapper. Success responses are DTOs and the HTTP status carries the meaning. See [error-handling.md](references/error-handling.md).
 
@@ -83,7 +83,7 @@ Read [boot-versions.md](references/boot-versions.md) for the current release lin
 ## Runtime and Operations
 
 - **Configuration**: `@ConfigurationProperties` over scattered `@Value`, profile strategy, secrets and environment binding, and validating configuration at startup. Read [configuration.md](references/configuration.md)
-- **Async and Scheduling**: `@Async` and its proxy trap, task executors, `@Scheduled`, and virtual threads - including when they remove the reason to reach for reactive. Read [async-and-scheduling.md](references/async-and-scheduling.md)
+- **Async and Scheduling**: `@Async` and its proxy trap, task executors, `@Scheduled`, virtual threads - including when they remove the reason to reach for reactive - and structured concurrency for the fan-out inside one request that virtual threads do not touch. Read [async-and-scheduling.md](references/async-and-scheduling.md)
 - **Observability**: Actuator endpoints, liveness and readiness probes, Micrometer metrics, distributed tracing, and what is safe to expose in production. Read [observability.md](references/observability.md)
 - **Spring Batch**: Batch 6's API, the resourceless default repository that silently costs you restartability, `JobOperator`, chunk boundaries and reader thread-safety. Read [spring-batch.md](references/spring-batch.md)
 
