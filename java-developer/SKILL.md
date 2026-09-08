@@ -96,6 +96,10 @@ The reference carries a per-feature verdict table - adopt, adopt for scripts onl
 - **Modern APIs**: Stream gatherers, virtual threads, and the Foreign Function & Memory API - when each is genuinely worth reaching for. Read [modern-apis.md](references/modern-apis.md)
 - **Structured Concurrency and Scoped Values**: What virtual threads do *not* fix, the measured cost of `synchronized` pinning before Java 24, the `StructuredTaskScope` API as Java 25 redesigned it (and why every pre-25 snippet has to be rewritten), writing a `Joiner`, and `ScopedValue` as the only context mechanism that survives a `fork()`. Read [structured-concurrency.md](references/structured-concurrency.md)
 
+## Performance
+
+- **Performance is a separate skill, and deliberately so.** This skill covers writing correct modern Java; it does not diagnose a slow application, choose a garbage collector, size a heap, or read a profile. For any of that - a symptom to triage, GC pauses, an `OutOfMemoryError`, high CPU, slow startup, JVM flag selection, benchmarking with JMH, or the measured cost of allocation, collections, strings, I/O and synchronisation - use [`java-performance-developer`](../java-performance-developer/SKILL.md). Two rules from it are worth carrying into ordinary code review here: **never recommend a JVM flag without the measurement that justifies it**, and keep what is safe to apply blind (buffer your I/O, size your collections, hoist a `StringBuilder` out of a loop) separate from what needs evidence first (heap sizing, collector choice, pool sizing, every `-XX` flag).
+
 ## Enforcement and Style
 
 - **Enforcement**: Which tool actually checks each rule in this skill. `javac -Xlint` is nearly silent by default and the useful keys are all off; Error Prone's `StatementSwitchToExpressionSwitch`, `PatternMatchingInstanceof` and `MissingOverride` mechanise three of this skill's rules; a formatter retires every layout question; and an honest list of what nothing enforces. Read [enforcement.md](references/enforcement.md)
