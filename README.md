@@ -1,3 +1,7 @@
+# Agent Skills
+
+A collection of Agent Skills for agentic coding tools, covering full-stack delivery: Angular, TypeScript and CSS on the front end, Java and Spring Boot on the back end, and PostgreSQL underneath. Each skill is a single `SKILL.md` entry point backed by focused reference files, so an agent loads only what the task in hand needs rather than one oversized prompt. The guidance is deliberately version-specific, and the mistakes agents actually make are recorded alongside it.
+
 ## Available skills
 
 | Skill | What it does |
