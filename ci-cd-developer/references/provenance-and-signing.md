@@ -97,6 +97,15 @@ Measured results:
 
 The negative control is the point. A verification step that has never been shown to *fail* on a tampered artifact has not been tested.
 
+**The same control, run against a real registry rather than a file.** Two images pushed to one tag, then the *second* digest signed:
+
+| Verification target | `cosign verify` exit code |
+| ------------------- | ------------------------- |
+| The digest that was signed | **0** |
+| The other digest in the same repository | **10** |
+
+A signature is bound to a digest, not to a repository or a tag. Verifying "the image at `:prod`" proves nothing unless you resolve and check the digest you actually signed.
+
 **Three v3 traps, all hit while getting the above to work:**
 
 1. **`cosign sign-blob --key ... --tlog-upload=false` alone no longer works.** It errors with `must specify --bundle with --new-bundle-format`. The v2-era one-liner is dead.

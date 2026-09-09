@@ -24,13 +24,17 @@ on:
 permissions:
   contents: read                  # workflow-level floor
 
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true        # supersede stale runs on the same ref
+# NOTE: no workflow-level `concurrency` here on purpose. A workflow-level
+# `cancel-in-progress: true` would also cover the deploy job below, and
+# cancelling a deploy mid-flight leaves the target in an unknown state.
+# Scope cancellation to the CI jobs and serialise the deploy separately.
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    concurrency:                  # cancellation belongs HERE, not workflow-wide
+      group: build-${{ github.ref }}
+      cancel-in-progress: true
     outputs:
       digest: ${{ steps.push.outputs.digest }}
     steps:
@@ -48,6 +52,9 @@ jobs:
 
   deploy:
     needs: build
+    concurrency:                  # serialise, never cancel
+      group: deploy-production
+      cancel-in-progress: false
     environment: production       # approval gate + scoped secrets live here
     permissions:
       contents: read
@@ -56,7 +63,7 @@ jobs:
       - run: echo "deploying ${{ needs.build.outputs.digest }}"
 ```
 
-Every element of that is load-bearing: pinned SHAs with version comments, an explicit `permissions` floor, `concurrency` to cancel superseded runs, a digest passed forward rather than rebuilt, and `id-token: write` only on the job that federates.
+Every element of that is load-bearing: pinned SHAs with version comments, an explicit `permissions` floor, **per-job** concurrency so only CI is cancellable while the deploy is merely serialised, a digest passed forward rather than rebuilt, and `id-token: write` only on the job that federates. An earlier draft of this file put `cancel-in-progress: true` at workflow level, which silently made the production deploy cancellable and contradicted this file's own next section, its gotcha list, checklist A59 and [runners.md](runners.md).
 
 ## `cancel-in-progress`, and where not to use it
 

@@ -83,7 +83,15 @@ Genuinely run on this machine, with controls where a control was meaningful:
 | A secret `COPY`ed then `rm`ed survives in an earlier layer | Decompressed each OCI blob: found `tmp/secret.txt` plaintext in one layer and a `.wh.secret.txt` whiteout in a later one. **Control:** `--mount=type=secret` gave 0 layers |
 | Multi-stage removes the compiler and shrinks the image | `bin/javac` present in 1 layer of the single-stage image, **0** in the multi-stage; 150,408,486 against 116,814,934 bytes; `Config.User` root against `10001` |
 | A source SBOM misses what the base image contributes | syft: **1** component for the source tree, **1,263** for the image built from it |
-| Base-image packages dominate vulnerability findings | grype on that image: **326 findings, 321 from `deb` OS packages, 0 from the application** |
+| Base-image packages dominate vulnerability findings | grype: **326 findings, 321 deb + 5 go-module (both base image), 0 from the application** = 100% base image |
+| `kubectl rollout status` is a real gate | Live kind cluster v1.37.0: exit **0** healthy, exit **1** on an unpullable image |
+| Readiness gates endpoints; liveness restarts | Service reported `ready=0, notReady=2` with readiness failing; `restartCount` hit **4** with liveness failing |
+| `rollout undo` reverts the pod template only | Image reverted, the ConfigMap changed in the same release **did not** |
+| `revisionHistoryLimit` is the rollback window | With limit 2 after 4 revisions, revision 1's ReplicaSet was **deleted** |
+| An initContainer migration runs per replica | `replicas: 3` gave **3** executions; a `Job` gave **1** |
+| A tag is not an identity | Two builds to `:prod` gave different digests; the old digest **stayed pullable** |
+| A signature binds to a digest | `cosign verify` exit **0** on the signed digest, **10** on the other |
+| trivy agrees with grype on origin | **20 findings** on `alpine:3.22`, all target type `alpine`, none from the application |
 
 **The negative controls are the point.** A reproducibility claim without the without-the-property comparison, or a signature-verification claim without a tampered input, is an assertion.
 
@@ -94,9 +102,11 @@ Stated plainly, because most of the deployment half falls here:
 - **Every cloud target.** No AWS, Azure, GCP or Cloudflare account. All of [target-kubernetes.md](target-kubernetes.md), [target-azure.md](target-azure.md), [target-aws.md](target-aws.md), [target-cloudflare-workers.md](target-cloudflare-workers.md) and [target-cloudflare-containers.md](target-cloudflare-containers.md) is cited from vendor documentation.
 - **Hosted runner behaviour.** Token scoping, OIDC minting, environments, approvals, cache hit rates, queueing, and what is preinstalled.
 - **Azure DevOps and GitLab entirely.** No organisation or instance available; both platform files are documentation-derived.
-- **Registry interaction and multi-architecture builds.** Images were built locally, but no registry was stood up, so digest immutability, cross-registry copying and manifest-list signing remain cited.
-- **Kubernetes.** A local `kind` cluster was attempted and stalled under host load; `target-kubernetes.md` is still entirely cited, and is the cheapest gap to close next.
-- **SAST, DAST and IaC scanning.** `grype` was run against a real image; the other scanner classes were not.
+- **Hosted runner behaviour.** Token scoping, OIDC minting, environments, approvals, cache hit rates and preinstalled tooling. The largest remaining block.
+- **Cross-registry copying and multi-architecture manifest lists.** A registry was stood up and digests verified, but `crane`/`skopeo` copying was not exercised and the manifest list could not be read back over plain HTTP.
+- **Multi-node cluster behaviour.** `maxSurge`/`maxUnavailable` capacity effects under real traffic, GitOps reconciliation and admission-controller enforcement.
+- **SAST, DAST and IaC scanning.** `grype` and `trivy` were both run against real images; the other scanner classes were not.
+- **Nine claims in earlier drafts were wrong** and are corrected, with the corrections marked at the point of use. See [../VERIFICATION-STATUS.md](../VERIFICATION-STATUS.md) for the full list and how each was found.
 - **The DORA findings.** Cited, not reproduced, and no figures quoted.
 
 ## Version notes

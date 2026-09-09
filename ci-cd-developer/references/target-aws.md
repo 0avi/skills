@@ -30,7 +30,11 @@ Two points that decide whether the pipeline is honest:
 - **Step 3 is not optional.** `update-service` returns as soon as the API accepts the change. Without `services-stable` the pipeline reports success while tasks may be failing and rolling back. Note `wait` has its own timeout behaviour, so treat a non-zero exit as a failed deploy.
 - **The task definition is the artifact of record.** Keep the rendered JSON in version control or as a pipeline artifact, because "which revision is production running, and what was in it" is the first question in any investigation.
 
-**Reference the image by digest** in the task definition, not by tag. A tag resolved at task-launch time means a scaling event weeks later could pull a different image than the deploy did. That is a genuinely nasty failure mode: the deploy was correct and the service drifts later.
+**Reference the image by digest** in the task definition - but not for the reason usually given, and an earlier draft of this file gave the wrong one.
+
+Current ECS resolves tags to digests **at deployment time** and reuses that digest for subsequent tasks. The container definition parameter **`versionConsistency` defaults to `enabled`**, and with it ECS pins the resolved digest for the rest of the service's tasks and for future updates. So the "a scaling event weeks later pulls a different image" drift **does not happen by default** on current ECS.
+
+It can still happen, and these are the cases to check: `versionConsistency` explicitly set to `disabled`, digest resolution failing repeatedly at deployment, or a container agent older than the versions that support the feature. Referencing the digest yourself remains the better practice because it makes the identity explicit in the task definition you keep as a record - not because ECS would otherwise drift.
 
 ## Health checks: two independent ones
 
@@ -113,14 +117,14 @@ That last point is a real trap: an aggressive lifecycle policy can delete an ima
 
 - **The deployable unit is a task definition revision**, not an image. Rollback means the previous revision.
 - **`aws ecs wait services-stable` has a bounded timeout**; a timeout is not proof of failure but must be treated as one.
-- **Reference images by digest** in the task definition, or a later scaling event may pull a different image.
+- **`versionConsistency` defaults to `enabled`**, so ECS resolves a tag to a digest at deployment and pins it. Referencing the digest yourself is still better for the audit trail, but tag drift on scaling is not the default risk it is often described as.
 - **ECR lifecycle policies can expire images a task definition references**, breaking rollback and scaling.
 - **Not verified here:** no AWS account available. All cited from AWS documentation; CLI shapes change, so verify against the current CLI.
 
 ## Gotchas
 
 - Agent runs `update-service` and does not wait for stability - the pipeline reports success while tasks fail and roll back
-- Agent references the image by tag in the task definition - a scaling event later pulls a different image than the deploy did
+- Agent references the image by tag and records nothing - ECS pins the resolved digest by default, so drift is unlikely, but the task definition then does not state which image actually ran
 - Agent sets `healthCheckGracePeriodSeconds` shorter than startup time - tasks are killed before they can pass, looping forever
 - Agent leaves deregistration delay shorter than the longest request - in-flight requests are cut on every rollout
 - Agent does not handle `SIGTERM` - requests dropped on task replacement

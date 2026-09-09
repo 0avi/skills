@@ -70,7 +70,7 @@ Native support: Kubernetes with a service mesh or Gateway API weighting, Argo Ro
 | **AWS ECS / Fargate** | Rolling | CodeDeploy blue-green | CodeDeploy canary or linear |
 | **VM / on-prem** | Whatever you build | Two pools plus a load balancer | Load balancer weighting |
 | **Cloudflare Workers** | Immediate 100% | Not really | **Gradual deployments, two versions** |
-| **Cloudflare Containers** | **Rolling, 10% then 90%** | No | Via `rollout_step_percentage` |
+| **Cloudflare Containers** | **Rolling, cumulative `[10, 100]`** | No | Via `rollout_step_percentage` |
 
 ## Feature flags: the strategy that decouples the two questions
 
@@ -85,7 +85,7 @@ The cost is real and worth stating: every flag is a branch in production, flags 
 - **Rolling is the default on nearly every target**, so it is what you get unless you choose otherwise. Verify readiness and graceful shutdown are in place before relying on it.
 - **Blue-green does not solve migrations.** Shared database, shared constraint.
 - **Cloudflare Workers gradual deployments are limited to two versions** and to the last 100 uploaded.
-- **Cloudflare Containers rolls 10% then 90% by default**, and the Worker updates immediately while instances roll, leaving a skew window.
+- **Cloudflare Containers rolls in cumulative steps defaulting to `[10, 100]`** - the array must end at 100, so `[10, 90]` is wrong - and the Worker updates immediately while instances roll, leaving a skew window.
 - **Not verified here:** every strategy above needs a live target. Cited from vendor documentation, and the Cloudflare specifics from Cloudflare's docs.
 
 ## Gotchas

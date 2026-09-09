@@ -47,7 +47,11 @@ test:
 
 deploy:prod:
   stage: deploy
-  needs: [test]
+  needs:                         # MUST include build: that is where the jar comes from
+    - job: build
+      artifacts: true
+    - job: test
+      artifacts: false
   environment:
     name: production
     url: https://app.example.com
@@ -61,6 +65,8 @@ deploy:prod:
 ```
 
 Every line of that earns its place: `needs` for the DAG, `when: always` so test reports survive a failure, `resource_group` to serialise, `rules` with `when: manual` as the gate, and `id_tokens` instead of a stored key.
+
+**Note the shape of `needs` on the deploy job**, because getting it wrong is silent. `needs` restricts artifact download to the jobs it names, so `needs: [test]` alone would give the deploy job **no jar at all** - `test` publishes only a JUnit report. An earlier draft of this file made exactly that mistake. Name `build` explicitly, and use the `artifacts: true`/`false` form to fetch only what each job actually contributes.
 
 ## `needs` against stages
 

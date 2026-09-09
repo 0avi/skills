@@ -154,7 +154,7 @@ Every practice in one scannable list, for a pipeline review pass.
 | B18 | `healthCheckGracePeriodSeconds` (ECS) | Measured application startup time | [target-aws.md](target-aws.md) |
 | B19 | Container Apps scale-to-zero | Latency tolerance for a cold start | [target-azure.md](target-azure.md) |
 | B20 | Cloudflare `instance_type` | Actual memory and CPU needs; the default is smallest | [target-cloudflare-containers.md](target-cloudflare-containers.md) |
-| B21 | Cloudflare `rollout_step_percentage` | Worker-to-container interface compatibility during skew | [target-cloudflare-containers.md](target-cloudflare-containers.md) |
+| B21 | Cloudflare `rollout_step_percentage` | Worker-to-container interface compatibility during skew. Values are **cumulative and must end at 100** | [target-cloudflare-containers.md](target-cloudflare-containers.md) |
 | B22 | Slot-specific settings (App Service) | Which settings distinguish environments. **Get this wrong and staging's DB swaps into production** | [target-azure.md](target-azure.md) |
 | B23 | Distroless or Alpine base | A debugging plan, and native-dependency compatibility | [containers.md](containers.md) |
 | B24 | Buildpacks against a Dockerfile | Whether rebase matters more than transparency | [containers.md](containers.md) |

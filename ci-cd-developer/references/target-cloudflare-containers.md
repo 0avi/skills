@@ -4,10 +4,10 @@ Cloudflare Containers run a real OCI image, unlike Workers. But they are **not**
 
 | The four questions | Answer |
 | ------------------ | ------ |
-| **How does an artifact become running code?** | `wrangler deploy` builds and pushes the image with **Docker**, uploads the Worker, then updates container instances |
+| **How does an artifact become running code?** | `wrangler deploy` uploads the Worker and updates container instances. It builds the image with **Docker only if `image` points at a Dockerfile**; with a registry reference, no Docker is needed |
 | **How is configuration injected?** | Worker bindings and secrets, passed into the container by your Worker code. Not a separate container env store |
 | **What is the rollback primitive?** | Redeploy the previous image and Worker together. There is no single "previous deployment" pointer covering both |
-| **What is the zero-downtime primitive?** | A **built-in rolling rollout**, 10% then 90% by default, configurable |
+| **What is the zero-downtime primitive?** | A **built-in rolling rollout**, cumulative steps defaulting to `[10, 100]`, configurable |
 
 ---
 
@@ -19,7 +19,7 @@ Three pipeline consequences:
 
 1. **You are always deploying two things at once** - Worker code and a container image - and they are versioned together in one `wrangler deploy`.
 2. **You cannot deploy the container alone.** There is no "update just the image" path equivalent to `kubectl set image`.
-3. **Docker is a build dependency of your pipeline.** `wrangler deploy` invokes Docker to build and push. A runner without a working Docker daemon cannot deploy, which rules out some hosted runner configurations and matters for self-hosted ones.
+3. **Docker is a build dependency only on the Dockerfile path.** Cloudflare's documentation splits it cleanly: if `image` is a path to a Dockerfile you must "start Docker or another Docker-compatible engine"; if `image` is a registry reference - the Cloudflare Registry, Docker Hub, Amazon ECR or Google Artifact Registry - **you do not need Docker running**. An earlier draft of this file said Docker was required outright, which is wrong for the very pipeline shape this file recommends.
 
 ## Image configuration
 
@@ -52,7 +52,7 @@ Cloudflare provides a managed registry at `registry.cloudflare.com/<ACCOUNT_ID>/
 `wrangler deploy` does not update everything simultaneously, and this is the most important operational detail:
 
 - **Worker code updates immediately.**
-- **Container instances update by rolling deploy**, in two steps by default: **10% of instances first, then the remaining 90%**, tunable with `rollout_step_percentage`.
+- **Container instances update by rolling deploy**, controlled by `rollout_step_percentage`. **The values are cumulative targets, not per-step increments** - an array "must contain ascending integer values from 10 through 100" and **must end in 100**. So the default two-step rollout is **`[10, 100]`**: 10% of instances first, then all of them. A single number instead sets the step size, from the allowed set `5`, `10`, `20`, `25`, `50`, `100`.
 
 **So there is a window in which new Worker code is talking to old container instances.** That is a real compatibility requirement, and it is the same discipline as a database migration: the new Worker must work against both the old and the new container image, at least for the duration of the rollout. Deploy a breaking change to the container's interface and requests will fail during the window, not after it.
 
@@ -85,7 +85,7 @@ with the image reference in the Wrangler config templated or set to the same tag
 | --- | ------- | ---------- |
 | Unit of deployment | A **version** of the Worker | A Worker **plus** an image |
 | Build artifact | A JS/Wasm bundle | An **OCI image** |
-| Needs Docker in CI | No | **Yes** |
+| Needs Docker in CI | No | **Only when building from a Dockerfile**; not for a registry reference |
 | Promotion model | Upload a version, deploy later | Deploy builds or references, then rolls out |
 | Traffic splitting | **Gradual deployments** between two versions | **Rolling rollout** by instance percentage |
 | Rollback | Deploy a previous version | Redeploy previous Worker and image |
@@ -96,7 +96,7 @@ Choose Workers where the workload fits the isolate model; reach for Containers w
 ## Version notes
 
 - **Instance types** are `lite`, `basic`, `standard-1`, `standard-2`, `standard-3`, `standard-4`, with `lite` the default.
-- **Default rollout** is two steps at 10% and 90%, changeable with `rollout_step_percentage`.
+- **Default rollout** is two cumulative steps, **`[10, 100]`**. Writing `[10, 90]` is wrong: the array must end at 100, so a value of 90 would leave instances un-updated rather than describing the second 90%.
 - **Shutdown** is `SIGTERM` followed by a **15 minute** grace period.
 - **The container class extends `DurableObject`**, so Durable Object semantics apply to routing and state.
 - **Cited from Cloudflare's documentation, not measured.** Verifying this needs a Cloudflare account with Containers enabled and a working Docker daemon on the runner. Cloudflare ships product changes frequently; re-check the rollout defaults and instance types before quoting them.
@@ -105,6 +105,8 @@ Choose Workers where the workload fits the isolate model; reach for Containers w
 
 - Agent points `image` at a Dockerfile in a CI deploy - the deploy step then **rebuilds**, so the deployed image is not the tested image; push once and deploy by reference
 - Agent assumes the container and the Worker update together - **Worker code updates immediately while instances roll**, leaving a skew window
+- Agent writes `rollout_step_percentage = [10, 90]` believing the values are increments - they are **cumulative targets and must end in 100**; use `[10, 100]`
+- Agent assumes `wrangler deploy` always needs Docker - only when `image` is a Dockerfile; a registry reference needs none
 - Agent ships a breaking Worker-to-container interface change in one deploy - fails during the rollout window; expand first, contract in a later deploy
 - Agent leaves `instance_type` unset - defaults to `lite`, the smallest, and the application may thrash or fail
 - Agent does not handle `SIGTERM` in the image - the instance is terminated at the end of the 15 minute grace period with in-flight work lost

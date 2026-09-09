@@ -97,18 +97,32 @@ For the application, a **managed identity** removes connection-string secrets en
 | --------- | ----- |
 | App settings | Environment variables. Mark slot-specific ones as such |
 | **Key Vault references** | The setting holds a reference; the value stays in Key Vault |
-| Container Apps secrets | Referenced by env vars, and a secret change creates a new revision |
+| Container Apps secrets | **Application-scoped.** Referenced by env vars or volume mounts; changing one does **not** create a revision |
 
 **Prefer Key Vault references** so the value is never in the app configuration, rotation happens in one place, and access is audited.
 
-Note the Container Apps behaviour: changing a secret **creates a new revision**, so a secret rotation is a deployment. Plan it as one rather than being surprised.
+**Note the Container Apps behaviour, which is the opposite of what people expect** - and the opposite of what an earlier draft of this file said. Secrets are **application-scoped**, living in `properties.configuration.secrets` rather than `properties.template`, so adding, changing or removing one is an *application-scope* change: "New revisions don't get generated through adding, removing, or changing secrets."
+
+**No new revision is created, and running replicas keep serving the old value**, because the value is injected at replica start. A rotation is therefore not a deployment and does not roll itself out. It needs a deliberate second step:
+
+```bash
+# restart each active revision that references the secret
+az containerapp revision restart \
+  --revision <REVISION_NAME> --resource-group <RESOURCE_GROUP>
+```
+
+Or deploy a new revision by making any revision-scope change. In multiple-revision mode **every** active revision must be restarted individually.
+
+**One case self-heals:** a Key Vault reference with **no version in the URI** picks up the latest version automatically within about 30 minutes, and active revisions referencing it in an environment variable are restarted automatically. A version-pinned URI or an inline secret value does not. That is a good reason to prefer unversioned Key Vault references.
+
+**Deletion has an ordering requirement:** deploy a revision that no longer references the secret, deactivate the revisions that do, then delete it.
 
 ## Version notes
 
 - **App Service slot swap** warms the target and exchanges routing; it is not a DNS change.
 - **Slot-specific settings do not swap.** This is the single most important App Service detail.
 - **Container Apps needs multiple-revision mode** for traffic splitting; single mode ignores weights.
-- **A Container Apps secret change creates a revision**, so it is a deployment.
+- **A Container Apps secret change does *not* create a revision** - it is application-scope. Restart the active revisions, or deploy a new one, or the rotation silently has no effect.
 - **Deploy by digest** on both, not by tag, for the usual reason. See [artifacts-and-registries.md](artifacts-and-registries.md).
 - **Not verified here:** no Azure subscription available. All cited from Microsoft's documentation. Azure CLI command shapes change; verify against the current CLI.
 
@@ -122,7 +136,7 @@ Note the Container Apps behaviour: changing a secret **creates a new revision**,
 - Agent deploys by tag rather than digest - the running artifact is not identifiably the tested one
 - Agent uses a service principal secret from Azure DevOps - workload identity federation removes it
 - Agent puts a connection string in app settings when managed identity would work - a secret that need not exist
-- Agent rotates a Container Apps secret without expecting a new revision - it is a deployment
+- Agent rotates a Container Apps secret and assumes it took effect - **no revision is created and running replicas serve the old value until restarted**
 - Agent verifies the staging slot by the production hostname - defeats the purpose; use the slot's own hostname
 - Agent assumes a swap-back rollback restores warm state - the swapped-out instance may need warming again
 

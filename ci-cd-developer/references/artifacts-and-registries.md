@@ -34,6 +34,16 @@ docker pull "$REG/app@$digest"
 
 **A pipeline that pushes `:latest` and deploys `:latest` has no artifact identity at all.** Two runs racing means production gets whichever finished last, and nothing records which commit that was.
 
+**Measured against a live registry**, pushing two different builds to the same tag:
+
+| Action | Result |
+| ------ | ------ |
+| Build A pushed to `:prod` | digest `sha256:0f465b789fbd…` |
+| Build B pushed to `:prod` | digest `sha256:5b0c6a56fc74…` |
+| Pull the **old** digest afterwards | **Still succeeds** |
+
+So the tag silently re-pointed to different content, while the original digest remained addressable. That is the whole argument in two lines: **a tag is a name that moves, a digest is the content.** Anything that must not change between stages has to travel as the digest.
+
 ## Immutability
 
 Configure the registry to reject overwriting an existing tag. Most support it: ECR tag immutability, Azure Container Registry locks, GitLab and GitHub package retention policies, Nexus and Artifactory release repositories.
@@ -108,7 +118,8 @@ LABEL org.opencontainers.image.source="https://github.com/org/repo"
 
 - **On a multi-arch build, promote and sign the manifest list digest**, not a per-architecture digest, or verification at deploy time will fail.
 - **Attestations and SBOMs must travel with the artifact** and share its retention. Evidence separated from the thing it describes is worthless.
-- **Not verified here:** registry behaviour, retention and cross-registry copying were not exercised on this machine. Cited from tool and registry documentation.
+- **Measured here** against a local `registry:3`: the same tag re-resolving to a different digest while the old digest stayed pullable, and `cosign` signing a specific digest.
+- **Not verified here:** retention policies, cross-registry copying, and multi-architecture manifest-list reading (the list digest was captured but the manifest could not be read back through a plain HTTP request). Cited from tool and registry documentation.
 
 ## Gotchas
 

@@ -70,10 +70,10 @@ Never depend on a pre-installed toolchain version; install it explicitly. See [r
 | **Docker** | **29.7.2** | **Yes** - images built; secret-in-layers, multi-stage and `Config.User` measured |
 | **Maven** | **3.9.16** | **Yes** - reproducible build measured with a control |
 | **grype** | **0.118.0** | **Yes** - scanned a real runtime image; 326 findings classified by package type |
-| **trivy** | **0.74.0** | Installed, not used for a published figure |
-| **kind** | **0.33.0** | Installed; **cluster creation did not complete** on this host under load |
+| **trivy** | **0.74.0** | **Yes** - 20 findings on `alpine:3.22`, all base-image |
+| **kind** | **0.33.0** | **Yes** - a single-node cluster running Kubernetes **v1.37.0**; six experiments run against it |
 | **Node / npm** | **25.8.0** / **11.11.0** | Present, not exercised |
-| **kubectl** | **v1.36.1** | Client only; no cluster reached |
+| **kubectl** | **v1.36.1** | **Yes** - against the live cluster; also confirmed `--record` still works with a deprecation warning |
 | `gradle`, `gh`, cloud CLIs | not installed | No |
 
 ### What syft emits, measured
@@ -114,7 +114,7 @@ syft dir:. -o spdx-json=/tmp/s.json && python -c \
 
 - **Everything above was resolved on Windows x64.** Action SHAs and standards versions are platform-neutral; tool availability and behaviour are not.
 - **No cloud account and no hosted runner** was available, so every cloud and hosted-runner statement in this skill is cited from vendor documentation rather than measured.
-- **A local `kind` cluster was attempted and abandoned.** `kind` 0.33.0 pulled `kindest/node:v1.37.0` successfully but stalled at "Preparing nodes" on a host already running 10 development containers. Kubernetes claims therefore remain cited. This is a host-capacity limitation, not a tooling one, and is the cheapest remaining gap to close.
+- **Kubernetes claims are now measured** against a kind cluster running v1.37.0. Earlier attempts failed only because the host has **7.75 GiB total memory** and ten development containers were running; with those stopped the cluster came up in 60 seconds. Host capacity, not tooling.
 - **Dates matter for standards.** CycloneDX 1.7 and SPDX 3.0.1 are recent; a tool built before them cannot emit them.
 - **The measurements have a date.** Re-run the reproduction commands rather than trusting a table that ages.
 

@@ -81,7 +81,9 @@ grype "$REG/app@$digest"
 | From the application's own code or dependencies | **0** |
 | By severity | 4 High, 281 Medium, 41 Low |
 
-**98.5% of findings came from the base image**, on an application with essentially no dependencies of its own. That is the quantified case for two things in this file: scan the image rather than only the source, and route the findings to whoever can actually fix them. Handing an application team 321 Debian package CVEs they cannot patch is how scanning gets switched off.
+**Every single finding came from the base image** - 321 from Debian OS packages plus 5 from Go modules shipped inside it, and **0** from the application. 321 + 5 + 0 = 326, so the base-image share is **100%**, not the 98.5% an earlier draft of this file quoted; that figure was 321/326 and silently reclassified the 5 Go-module findings as though they were not base-image findings, when the same table places them inside it.
+
+That is the quantified case for two things in this file: scan the image rather than only the source, and route findings to whoever can actually fix them. Handing an application team 326 CVEs it cannot patch is how scanning gets switched off.
 
 Route findings by **who can fix them**:
 
@@ -116,7 +118,7 @@ Tests the running application: authentication, headers, TLS, error handling, and
 
 - **Vulnerability databases update constantly**, so the same image scanned twice a week apart legitimately yields different results. That is not a bug, and it means a scan result has a date.
 - **Prefer SARIF upload** so findings appear on the pull request rather than in a log.
-- **Measured here:** `grype` **0.118.0** was run against the runtime image built for this skill, producing the 326-finding breakdown above. `trivy` **0.74.0** is installed but was not used for a published figure.
+- **Measured here:** `grype` **0.118.0** produced the 326-finding breakdown above on a `eclipse-temurin:25-jre` image. `trivy` **0.74.0** was run separately against an `alpine:3.22` image and reported **20 findings (2 High, 6 Medium, 12 Low), all of target type `alpine`** - again 0 from the application. Two different scanners, two different base images, same conclusion: the findings are the base image's.
 - **Not verified here:** SAST, DAST, IaC scanning and SARIF upload. Those need a hosted platform or a deployed application, and are cited from vendor documentation.
 
 ## Gotchas
